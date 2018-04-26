@@ -20,4 +20,8 @@ python3 -u /run_update.py &
 
 
 echo 'Starting the scheduler'
-python3 -u scheduler.py
+python3 -u scheduler.py &
+
+
+echo 'Starting the evaluation'
+python3 -u evaluate.py

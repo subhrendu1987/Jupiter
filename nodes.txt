@@ -27,7 +27,6 @@ node26 ubuntu-s-1vcpu-3gb-nyc1-07 root PASSWORD
 node27 ubuntu-s-1vcpu-3gb-nyc1-08 root PASSWORD
 node28 ubuntu-s-1vcpu-3gb-nyc1-09 root PASSWORD
 node29 ubuntu-s-1vcpu-3gb-ams3-01 root PASSWORD
-node30 ubuntu-s-1vcpu-3gb-ams3-02 root PASSWORD
 node31 ubuntu-s-1vcpu-3gb-ams3-03 root PASSWORD
 node32 ubuntu-s-1vcpu-3gb-ams3-04 root PASSWORD
 node33 ubuntu-s-1vcpu-3gb-ams3-05 root PASSWORD

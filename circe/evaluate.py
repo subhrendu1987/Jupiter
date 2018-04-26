@@ -32,7 +32,9 @@ def evaluate_interval(interval):
         interval (int): interval time to inject the sample input file
     
     """
+    time.sleep(300)
     file_count = len(os.listdir("sample_input/"))
+    file_count_out = len(os.listdir("output/"))
     src = "sample_input/1botnet.ipsum"
     dest = "input/1botnet.ipsum"
     print('---- Generate random input files')
@@ -42,6 +44,10 @@ def evaluate_interval(interval):
         while count<interval:
             count = count+1
             time.sleep(1)
+            file_count_out = len(os.listdir("output/"))
+            if file_count_out ==  i-1:
+                break
+
         src = "sample_input/%dbotnet.ipsum"%i
         dest = "input/%dbotnet.ipsum"%i
         print('---- Generate random input files')

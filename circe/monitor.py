@@ -28,6 +28,7 @@ import time
 import urllib.request
 from urllib import parse
 import configparser
+from multiprocessing import Process, Manager
 
 def send_monitor_data(msg):
     """
@@ -317,58 +318,46 @@ class Handler(FileSystemEventHandler):
                 line = 'created_input, %s, %s, %s, %s\n' %(node_name, taskname, temp_name, execution_start_time)
                 f.write(line)
 
-            queue_mul.put(new_file)
+            
             ts = time.time()
             """
                 Save the time the input file enters the queue
             """
-            filename = new_file
-            global filenames
-
-            if len(filenames) == 0:
+            # filename = new_file
+            
+            flag1 = sys.argv[1]
+            
+            if temp_name not in task_mul:
+                task_mul[temp_name] = [new_file]
                 runtime_info = 'rt_enter '+ temp_name+ ' '+str(ts)
                 send_runtime_profile(runtime_info)
+                count_dict[temp_name]=int(flag1)-1
+            else:
+                task_mul[temp_name] = task_mul[temp_name] + [new_file]
+                count_dict[temp_name]=count_dict[temp_name]-1
+            print(task_mul[temp_name])
+            # global filenames
 
-            flag1 = sys.argv[1]
-
-            if flag1 == "1":
-                # Start msg
-                # send_monitor_data("start")
+            if count_dict[temp_name] == 0: # enough input files
+                filename = task_mul[temp_name]
+                if len(filename)==1: 
+                    filenames = filename[0]
+                else:
+                    filenames = filename    
+                print(filename)
+                print(type(filename))
                 ts = time.time()
                 runtime_info = 'rt_exec '+ temp_name+ ' '+str(ts)
                 send_runtime_profile(runtime_info)
-                inputfile=queue_mul.get()
                 input_path = os.path.split(event.src_path)[0]
                 output_path = os.path.join(os.path.split(input_path)[0],'output')
-                dag_task = multiprocessing.Process(target=taskmodule.task, args=(inputfile, input_path, output_path))
+                dag_task = multiprocessing.Process(target=taskmodule.task, args=(filenames, input_path, output_path))
                 dag_task.start()
                 dag_task.join()
                 ts = time.time()
                 runtime_info = 'rt_finish '+ temp_name+ ' '+str(ts)
                 send_runtime_profile(runtime_info)
-                # send_monitor_data("end")
-                # end msg
-            else:
 
-                filenames.append(queue_mul.get())
-                if (len(filenames) == int(flag1)):
-                    #start msg
-                    #send_monitor_data("start")
-                    ts = time.time()
-                    runtime_info = 'rt_exec '+ temp_name+ ' '+str(ts)
-                    send_runtime_profile(runtime_info)
-                    input_path = os.path.split(event.src_path)[0]
-                    output_path = os.path.join(os.path.split(input_path)[0],'output')
-
-                    dag_task = multiprocessing.Process(target=taskmodule.task, args=(filenames, input_path, output_path))
-                    dag_task.start()
-                    dag_task.join()
-                    filenames = []
-                    ts = time.time()
-                    runtime_info = 'rt_finish '+ temp_name+ ' '+str(ts)
-                    send_runtime_profile(runtime_info)
-                    #send_monitor_data("end")
-                    # end msg
 
 def main():
     """
@@ -386,7 +375,7 @@ def main():
     config = configparser.ConfigParser()
     config.read(INI_PATH)
 
-    global FLASK_SVC, MONGO_PORT, username,password,ssh_port, num_retries, queue_mul
+    global FLASK_SVC, MONGO_PORT, username,password,ssh_port, num_retries, task_mul, count_dict
 
     FLASK_SVC   = int(config['PORT']['FLASK_SVC'])
     MONGO_PORT  = int(config['PORT']['MONGO_DOCKER'])
@@ -416,7 +405,10 @@ def main():
     all_nodes_ips = os.environ["ALL_NODES_IPS"].split(":")
 
     if taskmap[1] == True:
-        queue_mul=multiprocessing.Queue()
+        #queue_mul=multiprocessing.Queue()
+        manager = Manager()
+        task_mul = manager.dict()
+        count_dict = manager.dict()
 
         #monitor INPUT as another process
         w=Watcher()

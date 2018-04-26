@@ -14,6 +14,7 @@ import configparser
 
 HERE       = path.abspath(path.dirname(__file__)) + "/"
 INI_PATH   = HERE + 'jupiter_config.ini'
+DAG = 1 #using DAG application or XDAG application
 
 def get_home_node(file_name):
     with open(file_name) as file:
@@ -71,54 +72,89 @@ def set_globals():
 	KUBECONFIG_PATH         = os.environ['KUBECONFIG']
 
 	# Namespaces
-	DEPLOYMENT_NAMESPACE    = 'johndoe-circe'
-	PROFILER_NAMESPACE      = 'johndoe-profiler'
-	MAPPER_NAMESPACE        = 'johndoe-mapper'
-	EXEC_NAMESPACE          = 'johndoe-exec'
+	DEPLOYMENT_NAMESPACE    = 'quynh-circe'
+	PROFILER_NAMESPACE      = 'quynh-profiler'
+	MAPPER_NAMESPACE        = 'quynh-mapper'
+	EXEC_NAMESPACE          = 'quynh-exec'
 
 	""" Node file path and first task information """
 	global HOME_NODE, HOME_CHILD
 
 	HOME_NODE               = get_home_node(HERE + 'nodes.txt')
-	HOME_CHILD              = 'sample_ingress_task'
+	HOME_CHILD              = 'localpro'
 
-	"""CIRCE home and worker images"""
 	global HOME_IMAGE, WORKER_IMAGE
-
-	HOME_IMAGE              = 'docker.io/johndoe/circe_home:v0'
-	WORKER_IMAGE            = 'docker.io/johndoe/circe_worker:v0'
-
-	"""DRUPE home and worker images"""
 	global PROFILER_HOME_IMAGE, PROFILER_WORKER_IMAGE
-	
-	PROFILER_HOME_IMAGE     = 'docker.io/johndoe/profiler_home:v0'
-	PROFILER_WORKER_IMAGE   = 'docker.io/johndoe/profiler_worker:v0'
-
-	"""WAVE home and worker images"""
 	global WAVE_HOME_IMAGE, WAVE_WORKER_IMAGE
-
-	#v0: random, v1: greedy
-
-	WAVE_HOME_IMAGE         = 'docker.io/johndoe/wave_home:v0'
-	WAVE_WORKER_IMAGE       = 'docker.io/johndoe/wave_worker:v0'
-
-	"""Execution profiler home and worker images"""
 	global EXEC_HOME_IMAGE, EXEC_WORKER_IMAGE
-
-
-	EXEC_HOME_IMAGE         = 'docker.io/johndoe/exec_home:v0'
-	EXEC_WORKER_IMAGE       = 'docker.io/johndoe/exec_worker:v0'
-
-	"""HEFT docker image"""
 	global HEFT_IMAGE
-
-	HEFT_IMAGE              = 'docker.io/johndoe/heft:v0'
-
-	"""Application Information"""
+	global HOME_IMAGE, WORKER_IMAGE
 	global APP_PATH, APP_NAME
 
-	APP_PATH                = HERE  + 'app_specific_files/network_monitoring_app/'
-	APP_NAME                = 'app_specific_files/network_monitoring_app'
+
+	if DAG == 0: # XDAG images
+
+		"""CIRCE home and worker images"""
+		HOME_IMAGE              = 'docker.io/anrg/circe_home:xdag'
+		WORKER_IMAGE            = 'docker.io/anrg/circe_worker:xdag'
+
+		"""DRUPE home and worker images"""
+		PROFILER_HOME_IMAGE     = 'docker.io/anrg/profiler_home:xdag'
+		PROFILER_WORKER_IMAGE   = 'docker.io/anrg/profiler_worker:xdag'
+
+		"""WAVE home and worker images"""
+		if SCHEDULER == 0 or SCHEDULER == 1:
+			WAVE_HOME_IMAGE         = 'docker.io/anrg/wave_home:xdag_random'
+			WAVE_WORKER_IMAGE       = 'docker.io/anrg/wave_worker:xdag_random'
+		else:
+			WAVE_HOME_IMAGE         = 'docker.io/anrg/wave_home:xdag_greedy'
+			WAVE_WORKER_IMAGE       = 'docker.io/anrg/wave_worker:xdag_greedy'
+		"""Execution profiler home and worker images"""
+
+		EXEC_HOME_IMAGE         = 'docker.io/anrg/exec_home:xdag_random'
+		EXEC_WORKER_IMAGE       = 'docker.io/anrg/exec_worker:xdag_random'
+
+		"""HEFT docker image"""
+
+		HEFT_IMAGE              = 'docker.io/anrg/heft:xdag'
+
+		"""Application Information"""
+
+		APP_PATH                = HERE  + 'app_specific_files/network_monitoring_app_xdag/'
+		APP_NAME                = 'app_specific_files/network_monitoring_app_xdag'
+
+	else:# DAG images
+		"""CIRCE home and worker images"""
+		HOME_IMAGE              = 'docker.io/anrg/circe_home:dag'
+		WORKER_IMAGE            = 'docker.io/anrg/circe_worker:dag'
+
+		"""DRUPE home and worker images"""
+		PROFILER_HOME_IMAGE     = 'docker.io/anrg/profiler_home:dag'
+		PROFILER_WORKER_IMAGE   = 'docker.io/anrg/profiler_worker:dag'
+
+		"""WAVE home and worker images"""
+		if SCHEDULER == 0 or SCHEDULER == 1:
+			WAVE_HOME_IMAGE         = 'docker.io/anrg/wave_home:dag_random'
+			WAVE_WORKER_IMAGE       = 'docker.io/anrg/wave_worker:dag_random'
+		else:
+			WAVE_HOME_IMAGE         = 'docker.io/anrg/wave_home:dag_greedy'
+			WAVE_WORKER_IMAGE       = 'docker.io/anrg/wave_worker:dag_greedy'
+		
+		"""Execution profiler home and worker images"""
+		EXEC_HOME_IMAGE         = 'docker.io/anrg/exec_home:dag_random'
+		EXEC_WORKER_IMAGE       = 'docker.io/anrg/exec_worker:dag_random'
+
+		"""HEFT docker image"""
+		HEFT_IMAGE              = 'docker.io/anrg/heft:dag'
+
+		"""Application Information"""
+		APP_PATH                = HERE  + 'app_specific_files/network_monitoring_app_dag/'
+		APP_NAME                = 'app_specific_files/network_monitoring_app_dag'
+
+	# default APP
+	# APP_PATH                = HERE  + 'app_specific_files/network_monitoring_app/'
+	# APP_NAME                = 'app_specific_files/network_monitoring_app'
+
 
 if __name__ == '__main__':
 	set_globals()
