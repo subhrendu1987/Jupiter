@@ -27,7 +27,12 @@ from delete_all_circe import *
 from delete_all_waves import *
 from delete_all_heft import *
 
+from flask import Flask, request
+import _thread
+
+
 NUM_SAMPLES = 1
+app = Flask(__name__)
 
 def task_mapping_decorator(f):
     """Mapping the chosen scheduling modules based on ``jupiter_config.SCHEDULER`` in ``jupiter_config.ini``
@@ -192,10 +197,18 @@ def check_status_circe(dag):
     return result
 
 def get_pod_logs(namespace, pod_name):
+    """Generate log of pod given name space and pod name
+    
+    Args:
+        namespace (str): corresponding name space
+        pod_name (str): corresponding pod name
+    """
     ts = int(time.time())
     log_file = "../logs/circehome_%d.log" %(ts)
     bashCommand = "kubectl logs %s -n %s > %s"%(pod_name,namespace,log_file)
     os.system(bashCommand)
+
+
 
 
 def export_circe_log():
@@ -211,20 +224,45 @@ def export_circe_log():
     print('All deployments were created!!!!!!!!')
     config.load_kube_config(config_file = jupiter_config.KUBECONFIG_PATH)
     core_v1_api = client.CoreV1Api()
-    resp = core_v1_api.list_namespaced_pod('quynh-profiler')
+    resp = core_v1_api.list_namespaced_pod('quynh-circe')
     for i in resp.items:
         if i.metadata.name.startswith('home'):
             circe_name = i.metadata.name
             break;
     while 1:
-        get_pod_logs(jupiter_config.PROFILER_NAMESPACE,circe_name)
+        get_pod_logs(jupiter_config.DEPLOYMENT_NAMESPACE,circe_name)
         time.sleep(300)
 
+def check_finish_evaluation():
+    jupiter_config.set_globals()
+    line = "http://localhost:8080/api/v1/namespaces/"
+    line = line + jupiter_config.DEPLOYMENT_NAMESPACE + "/services/home:" + str(jupiter_config.FLASK_SVC) + "/proxy"
+    print(line)
+    time.sleep(5)
+    print(line)
+    while 1:
+        try:
+            print("Number of output files " + line)
+            r = requests.get(line)
+            print(r)
+            num_files = r.json()
+            data = int(json.dumps(num_files))
+            print(data)
+            time.sleep(300)
+            if data==10:
+                print('Finish running 10 sample files!!!!!!!!')
+                break
+        except:
+            print("Some Exception")
+    #redeploy_system()
+
 def main():
-    """
+    """ 503
         Generate logs, extract log information and redeploy system
     """
-    export_circe_log()
-    #redeploy_system()
+
+    _thread.start_new_thread(export_circe_log,())
+    _thread.start_new_thread(check_finish_evaluation,())
+    
 if __name__ == '__main__':
     main()

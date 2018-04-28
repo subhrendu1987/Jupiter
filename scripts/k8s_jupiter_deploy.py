@@ -69,13 +69,13 @@ def main():
         path2 = jupiter_config.HERE + 'nodes.txt'
 
         # start the profilers
-        profiler_ips = get_all_profilers()
-        #profiler_ips = k8s_profiler_scheduler()
+        #profiler_ips = get_all_profilers()
+        profiler_ips = k8s_profiler_scheduler()
 
 
         # start the execution profilers
-        execution_ips = get_all_execs()
-        #execution_ips = exec_profiler_function()
+        #execution_ips = get_all_execs()
+        execution_ips = exec_profiler_function()
 
         print('*************************')
         print('Network Profiling Information:')
@@ -89,7 +89,7 @@ def main():
         print('*************************')
 
         #Start the task to node mapper
-        #task_mapping_function(profiler_ips,execution_ips,node_names)
+        task_mapping_function(profiler_ips,execution_ips,node_names)
 
         """
             Make sure you run kubectl proxy --port=8080 on a terminal.

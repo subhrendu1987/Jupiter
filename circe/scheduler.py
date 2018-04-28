@@ -85,6 +85,17 @@ def recv_mapping():
     return "ok"
 app.add_url_rule('/recv_monitor_data', 'recv_mapping', recv_mapping)
 
+def return_output_files():
+    """
+    Return number of output files
+    
+    Returns:
+        int: number of output files
+    """
+    num_files = len(os.listdir("output/"))
+    print("Recieved request for number of output files. Current done:", num_files)
+    return json.dumps(num_files)
+app.add_url_rule('/', 'return_output_files', return_output_files)
 
 def recv_runtime_profile():
     """
@@ -121,7 +132,7 @@ def recv_runtime_profile():
             print(worker_node + " execution time:" + str(rt_finish_time[(worker_node,msg[1])] - rt_exec_time[(worker_node,msg[1])]))
             
             print('----------------------------')  
-            if worker_node == "globalfusion":
+            if worker_node == "globalfusion" and msg[1]=="10fusion":#just for evaluation results
                 # Per task stats:
                 print('********************************************') 
                 print("Runtime profiling info:")
