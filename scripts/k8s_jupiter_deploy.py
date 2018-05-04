@@ -48,7 +48,7 @@ def task_mapping_decorator(f):
 def empty_function():
     return []
 
-def main():
+def k8s_jupiter_deploy():
     """
         Deploy all Jupiter components (WAVE, CIRCE, DRUPE) in the system.
     """
@@ -133,5 +133,5 @@ def main():
     k8s_circe_scheduler(dag,schedule)
 
 if __name__ == '__main__':
-    main()
+    k8s_jupiter_deploy()
   

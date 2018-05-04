@@ -48,6 +48,7 @@ RUN mkdir -p /runtime
 
 # Add input files
 COPY  {app_file}/sample_input /sample_input
+COPY  {app_file}/sample_input2 /sample_input2
 
 # Add the mongodb scripts
 ADD circe/runtime_profiler_mongodb /central_mongod

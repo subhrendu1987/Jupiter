@@ -72,10 +72,10 @@ def set_globals():
 	KUBECONFIG_PATH         = os.environ['KUBECONFIG']
 
 	# Namespaces
-	DEPLOYMENT_NAMESPACE    = 'quynh-circe'
-	PROFILER_NAMESPACE      = 'quynh-profiler'
-	MAPPER_NAMESPACE        = 'quynh-mapper'
-	EXEC_NAMESPACE          = 'quynh-exec'
+	DEPLOYMENT_NAMESPACE    = 'test-circe'
+	PROFILER_NAMESPACE      = 'test-profiler'
+	MAPPER_NAMESPACE        = 'test-mapper'
+	EXEC_NAMESPACE          = 'test-exec'
 
 	""" Node file path and first task information """
 	global HOME_NODE, HOME_CHILD
@@ -95,28 +95,28 @@ def set_globals():
 	if DAG == 0: # XDAG images
 
 		"""CIRCE home and worker images"""
-		HOME_IMAGE              = 'docker.io/anrg/circe_home:xdag'
-		WORKER_IMAGE            = 'docker.io/anrg/circe_worker:xdag'
+		HOME_IMAGE              = 'docker.io/anrg/circe_home:txdag'
+		WORKER_IMAGE            = 'docker.io/anrg/circe_worker:txdag'
 
 		"""DRUPE home and worker images"""
-		PROFILER_HOME_IMAGE     = 'docker.io/anrg/profiler_home:xdag'
-		PROFILER_WORKER_IMAGE   = 'docker.io/anrg/profiler_worker:xdag'
+		PROFILER_HOME_IMAGE     = 'docker.io/anrg/profiler_home:txdag'
+		PROFILER_WORKER_IMAGE   = 'docker.io/anrg/profiler_worker:txdag'
 
 		"""WAVE home and worker images"""
 		if SCHEDULER == 0 or SCHEDULER == 1:
-			WAVE_HOME_IMAGE         = 'docker.io/anrg/wave_home:xdag_random'
-			WAVE_WORKER_IMAGE       = 'docker.io/anrg/wave_worker:xdag_random'
+			WAVE_HOME_IMAGE         = 'docker.io/anrg/wave_home:txdag_random'
+			WAVE_WORKER_IMAGE       = 'docker.io/anrg/wave_worker:txdag_random'
 		else:
-			WAVE_HOME_IMAGE         = 'docker.io/anrg/wave_home:xdag_greedy'
-			WAVE_WORKER_IMAGE       = 'docker.io/anrg/wave_worker:xdag_greedy'
+			WAVE_HOME_IMAGE         = 'docker.io/anrg/wave_home:txdag_greedy'
+			WAVE_WORKER_IMAGE       = 'docker.io/anrg/wave_worker:txdag_greedy'
 		"""Execution profiler home and worker images"""
 
-		EXEC_HOME_IMAGE         = 'docker.io/anrg/exec_home:xdag_random'
-		EXEC_WORKER_IMAGE       = 'docker.io/anrg/exec_worker:xdag_random'
+		EXEC_HOME_IMAGE         = 'docker.io/anrg/exec_home:txdag_random'
+		EXEC_WORKER_IMAGE       = 'docker.io/anrg/exec_worker:txdag_random'
 
 		"""HEFT docker image"""
 
-		HEFT_IMAGE              = 'docker.io/anrg/heft:xdag'
+		HEFT_IMAGE              = 'docker.io/anrg/heft:txdag'
 
 		"""Application Information"""
 
@@ -125,27 +125,27 @@ def set_globals():
 
 	else:# DAG images
 		"""CIRCE home and worker images"""
-		HOME_IMAGE              = 'docker.io/anrg/circe_home:dag'
-		WORKER_IMAGE            = 'docker.io/anrg/circe_worker:dag'
+		HOME_IMAGE              = 'docker.io/anrg/circe_home:tdag'
+		WORKER_IMAGE            = 'docker.io/anrg/circe_worker:tdag'
 
 		"""DRUPE home and worker images"""
-		PROFILER_HOME_IMAGE     = 'docker.io/anrg/profiler_home:dag'
-		PROFILER_WORKER_IMAGE   = 'docker.io/anrg/profiler_worker:dag'
+		PROFILER_HOME_IMAGE     = 'docker.io/anrg/profiler_home:tdag'
+		PROFILER_WORKER_IMAGE   = 'docker.io/anrg/profiler_worker:tdag'
 
 		"""WAVE home and worker images"""
 		if SCHEDULER == 0 or SCHEDULER == 1:
-			WAVE_HOME_IMAGE         = 'docker.io/anrg/wave_home:dag_random'
-			WAVE_WORKER_IMAGE       = 'docker.io/anrg/wave_worker:dag_random'
+			WAVE_HOME_IMAGE         = 'docker.io/anrg/wave_home:tdag_random'
+			WAVE_WORKER_IMAGE       = 'docker.io/anrg/wave_worker:tdag_random'
 		else:
-			WAVE_HOME_IMAGE         = 'docker.io/anrg/wave_home:dag_greedy'
-			WAVE_WORKER_IMAGE       = 'docker.io/anrg/wave_worker:dag_greedy'
+			WAVE_HOME_IMAGE         = 'docker.io/anrg/wave_home:tdag_greedy'
+			WAVE_WORKER_IMAGE       = 'docker.io/anrg/wave_worker:tdag_greedy'
 		
 		"""Execution profiler home and worker images"""
-		EXEC_HOME_IMAGE         = 'docker.io/anrg/exec_home:dag_random'
-		EXEC_WORKER_IMAGE       = 'docker.io/anrg/exec_worker:dag_random'
+		EXEC_HOME_IMAGE         = 'docker.io/anrg/exec_home:tdag_random'
+		EXEC_WORKER_IMAGE       = 'docker.io/anrg/exec_worker:tdag_random'
 
 		"""HEFT docker image"""
-		HEFT_IMAGE              = 'docker.io/anrg/heft:dag'
+		HEFT_IMAGE              = 'docker.io/anrg/heft:tdag'
 
 		"""Application Information"""
 		APP_PATH                = HERE  + 'app_specific_files/network_monitoring_app_dag/'
@@ -155,6 +155,6 @@ def set_globals():
 	# APP_PATH                = HERE  + 'app_specific_files/network_monitoring_app/'
 	# APP_NAME                = 'app_specific_files/network_monitoring_app'
 
-
+	
 if __name__ == '__main__':
 	set_globals()

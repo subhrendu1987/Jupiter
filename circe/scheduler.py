@@ -209,11 +209,12 @@ class MyHandler(PatternMatchingEventHandler):
             print(event.src_path, event.event_type)  # print now only for degug
             end_times.append(time.time())
             print("ending time is: ", end_times)
-
+            print(count)
+            print("starting time is: ", start_times)
             exec_times.append(end_times[count] - start_times[count])
 
             print("execution time is: ", exec_times)
-            # global count
+            # global count: number of output files
             count+=1
 
     def on_modified(self, event):

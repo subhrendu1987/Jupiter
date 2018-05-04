@@ -1,4 +1,4 @@
-__author__ = "Quynh Nguyen, Pradipta Ghosh, Bhaskar Krishnamachari"
+__author__ = "Quynh Nguyen and Bhaskar Krishnamachari"
 __copyright__ = "Copyright (c) 2018, Autonomous Networks Research Group. All rights reserved."
 __license__ = "GPL"
 __version__ = "2.0"
@@ -28,11 +28,45 @@ from delete_all_waves import *
 from delete_all_heft import *
 
 from flask import Flask, request
-import _thread
+from k8s_jupiter_deploy import *
+import datetime
 
-
-NUM_SAMPLES = 1
+NUM_SAMPLES = 5
+NUM_RUNS = 1
 app = Flask(__name__)
+
+def get_pod_logs(namespace, pod_name):
+    """Generate log of pod given name space and pod name
+    
+    Args:
+        namespace (str): corresponding name space
+        pod_name (str): corresponding pod name
+    """
+    ts = int(time.time())
+    log_file = "../logs/circehome_%d.log" %(ts)
+    bashCommand = "kubectl logs %s -n %s > %s"%(pod_name,namespace,log_file)
+    os.system(bashCommand)
+
+def export_circe_log():
+    """Export circe home log for evaluation, should only use when for non-static mapping
+    """
+    jupiter_config.set_globals()
+    path1 = jupiter_config.APP_PATH + 'configuration.txt'
+    dag_info = k8s_read_dag(path1)
+    dag = dag_info[1]
+    print(dag)
+    config.load_kube_config(config_file = jupiter_config.KUBECONFIG_PATH)
+    core_v1_api = client.CoreV1Api()
+    resp = core_v1_api.list_namespaced_pod(jupiter_config.DEPLOYMENT_NAMESPACE)
+    for i in resp.items:
+        if i.metadata.name.startswith('home'):
+            circe_name = i.metadata.name
+            break;
+    print('******************* Circe pod to export')
+    print(circe_name)
+    get_pod_logs(jupiter_config.DEPLOYMENT_NAMESPACE,circe_name)
+
+
 
 def task_mapping_decorator(f):
     """Mapping the chosen scheduling modules based on ``jupiter_config.SCHEDULER`` in ``jupiter_config.ini``
@@ -65,12 +99,15 @@ def redeploy_system():
     """
         Tear down all current deployments
     """
+    print('Tear down all current CIRCE deployments')
     delete_all_circe()
     if jupiter_config.SCHEDULER == 0: # HEFT
+        print('Tear down all current HEFT deployments')
         delete_all_heft()
         task_mapping_function  = task_mapping_decorator(k8s_heft_scheduler)
         exec_profiler_function = k8s_exec_scheduler
     else:# WAVE
+        print('Tear down all current WAVE deployments')
         delete_all_waves()
         task_mapping_function = task_mapping_decorator(k8s_wave_scheduler)
         exec_profiler_function = empty_function
@@ -145,124 +182,51 @@ def redeploy_system():
     # Start CIRCE
     k8s_circe_scheduler(dag,schedule)
 
-def check_status_circe(dag):
-    """
-    This function prints out all the tasks that are not running.
-    If all the tasks are running: return ``True``; else return ``False``.
-    """
-
-    jupiter_config.set_globals()
-
-    sys.path.append(jupiter_config.CIRCE_PATH)
-    """
-        This loads the kubernetes instance configuration.
-        In our case this is stored in admin.conf.
-        You should set the config file path in the jupiter_config.py file.
-    """
-    config.load_kube_config(config_file = jupiter_config.KUBECONFIG_PATH)
-    namespace = jupiter_config.DEPLOYMENT_NAMESPACE
 
 
-    # We have defined the namespace for deployments in jupiter_config
-
-    # Get proper handles or pointers to the k8-python tool to call different functions.
-    extensions_v1_beta1_api = client.ExtensionsV1beta1Api()
-    v1_delete_options = client.V1DeleteOptions()
-    core_v1_api = client.CoreV1Api()
-
-    result = True
-    for key, value in dag.items():
-        # First check if there is a deployment existing with
-        # the name = key in the respective namespac    # Check if there is a replicaset running by using the label app={key}
-        # The label of kubernets are used to identify replicaset associate to each task
-        label = "app=" + key
-
-        resp = None
-
-        resp = core_v1_api.list_namespaced_pod(namespace, label_selector = label)
-        # if a pod is running just delete it
-        if resp.items:
-            a=resp.items[0]
-            if a.status.phase != "Running":
-                print("Pod Not Running", key)
-                result = False
-
-            # print("Pod Deleted. status='%s'" % str(del_resp_2.status))
-
-    if result:
-        print("All systems GOOOOO!!")
-    else:
-        print("Wait before trying again!!!!")
-
-    return result
-
-def get_pod_logs(namespace, pod_name):
-    """Generate log of pod given name space and pod name
-    
-    Args:
-        namespace (str): corresponding name space
-        pod_name (str): corresponding pod name
-    """
-    ts = int(time.time())
-    log_file = "../logs/circehome_%d.log" %(ts)
-    bashCommand = "kubectl logs %s -n %s > %s"%(pod_name,namespace,log_file)
-    os.system(bashCommand)
-
-
-
-
-def export_circe_log():
-    """Export circe home log for evaluation, should only use when for non-static mapping
-    """
-    jupiter_config.set_globals()
-    path1 = jupiter_config.APP_PATH + 'configuration.txt'
-    dag = k8s_read_dag(path1)
-    # while 1:
-    #     if check_status_circe(dag):
-    #         break
-    #     time.sleep(30)
-    print('All deployments were created!!!!!!!!')
-    config.load_kube_config(config_file = jupiter_config.KUBECONFIG_PATH)
-    core_v1_api = client.CoreV1Api()
-    resp = core_v1_api.list_namespaced_pod('quynh-circe')
-    for i in resp.items:
-        if i.metadata.name.startswith('home'):
-            circe_name = i.metadata.name
-            break;
-    while 1:
-        get_pod_logs(jupiter_config.DEPLOYMENT_NAMESPACE,circe_name)
-        time.sleep(300)
 
 def check_finish_evaluation():
     jupiter_config.set_globals()
     line = "http://localhost:8080/api/v1/namespaces/"
     line = line + jupiter_config.DEPLOYMENT_NAMESPACE + "/services/home:" + str(jupiter_config.FLASK_SVC) + "/proxy"
-    print(line)
-    time.sleep(5)
+    print('Check if finishing evaluation sample tests')
     print(line)
     while 1:
         try:
-            print("Number of output files " + line)
+            print("Number of output files :")
             r = requests.get(line)
-            print(r)
+            #print(r)
             num_files = r.json()
             data = int(json.dumps(num_files))
             print(data)
-            time.sleep(300)
-            if data==10:
-                print('Finish running 10 sample files!!!!!!!!')
-                break
+            print(NUM_SAMPLES)
+            if data==NUM_SAMPLES:
+                print('Finish running all sample files!!!!!!!!')
+                return True
+            time.sleep(60)
         except:
             print("Some Exception")
-    #redeploy_system()
-
+            time.sleep(120)
+    
+    
 def main():
-    """ 503
+    """ 
         Generate logs, extract log information and redeploy system
     """
-
-    _thread.start_new_thread(export_circe_log,())
-    _thread.start_new_thread(check_finish_evaluation,())
     
+    k8s_jupiter_deploy()
+    with open("../logs/evaluation_log","a+") as f:
+        for i in range(0,NUM_RUNS):
+            f.write('============================\n')
+            if check_finish_evaluation()
+                f.write('\nFinish one run !!!!!!!!!!!!!!!!!!!!!!')
+                t = str(datetime.datetime.now())
+                print(t)            
+            # f.write(t)
+            # f.write('\nExport the log for this run')
+            # export_circe_log()
+            # time.sleep(120)
+            # f.write('\nRedeploy the system')
+            # redeploy_system()
 if __name__ == '__main__':
     main()
