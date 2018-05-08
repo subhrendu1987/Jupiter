@@ -30,3 +30,22 @@ from delete_all_heft import *
 from flask import Flask, request
 from k8s_jupiter_deploy import *
 from datetime import datetime
+
+def periodical_check(interval):
+	"""checking the health of system periodically
+	
+	Args:
+	    interval (int): periodic duration
+	"""
+	jupiter_config.set_globals() 
+	"""
+        This loads the kubernetes instance configuration.
+        In our case this is stored in admin.conf.
+        You should set the config file path in the jupiter_config.py file.
+    """
+	config.load_kube_config(config_file = jupiter_config.KUBECONFIG_PATH)
+
+	# Get proper handles or pointers to the k8-python tool to call different functions.
+	core_v1_api = client.V1Probe()
+if __name__ == '__main__':
+	periodical_check(120)

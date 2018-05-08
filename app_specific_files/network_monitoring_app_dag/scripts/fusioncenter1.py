@@ -40,7 +40,7 @@ def task(filelist, pathin, pathout):
 
 def main():
 
-    filelist = ['25anomalies_simple1.log', '25anomalies_astute1.log', '25anomalies_dft1.log', '25anomalies_tera1.log']
+    filelist = ['25anomalies_simple1.log', '25anomalies_astute1.log']
     outpath = os.path.join(os.path.dirname(__file__), "generated_files/")
     outfile = task(filelist, outpath, outpath)
     return outfile

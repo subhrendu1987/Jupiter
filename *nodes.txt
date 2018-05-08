@@ -60,6 +60,7 @@ node61 ubuntu-s-1vcpu-3gb-blr1-05 root PASSWORD
 node62 ubuntu-s-1vcpu-3gb-sfo2-01 root PASSWORD
 node63 ubuntu-s-1vcpu-3gb-sfo2-02 root PASSWORD
 node64 ubuntu-s-1vcpu-3gb-sfo2-03 root PASSWORD
+node65 ubuntu-s-1vcpu-3gb-sfo2-04 root PASSWORD
 node66 ubuntu-s-1vcpu-3gb-sfo2-05 root PASSWORD
 node67 ubuntu-s-1vcpu-3gb-tor1-01 root PASSWORD
 node68 ubuntu-s-1vcpu-3gb-tor1-02 root PASSWORD

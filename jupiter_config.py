@@ -111,8 +111,8 @@ def set_globals():
 			WAVE_WORKER_IMAGE       = 'docker.io/anrg/wave_worker:txdag_greedy'
 		"""Execution profiler home and worker images"""
 
-		EXEC_HOME_IMAGE         = 'docker.io/anrg/exec_home:txdag_random'
-		EXEC_WORKER_IMAGE       = 'docker.io/anrg/exec_worker:txdag_random'
+		EXEC_HOME_IMAGE         = 'docker.io/anrg/exec_home:txdag'
+		EXEC_WORKER_IMAGE       = 'docker.io/anrg/exec_worker:txdag'
 
 		"""HEFT docker image"""
 
@@ -141,8 +141,8 @@ def set_globals():
 			WAVE_WORKER_IMAGE       = 'docker.io/anrg/wave_worker:tdag_greedy'
 		
 		"""Execution profiler home and worker images"""
-		EXEC_HOME_IMAGE         = 'docker.io/anrg/exec_home:tdag_random'
-		EXEC_WORKER_IMAGE       = 'docker.io/anrg/exec_worker:tdag_random'
+		EXEC_HOME_IMAGE         = 'docker.io/anrg/exec_home:tdag'
+		EXEC_WORKER_IMAGE       = 'docker.io/anrg/exec_worker:tdag'
 
 		"""HEFT docker image"""
 		HEFT_IMAGE              = 'docker.io/anrg/heft:tdag'

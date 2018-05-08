@@ -31,8 +31,8 @@ from flask import Flask, request
 from k8s_jupiter_deploy import *
 import datetime
 
-NUM_SAMPLES = 5
-NUM_RUNS = 1
+NUM_SAMPLES = 20
+NUM_RUNS = 10
 app = Flask(__name__)
 
 def get_pod_logs(namespace, pod_name):
@@ -202,7 +202,7 @@ def check_finish_evaluation():
             print(NUM_SAMPLES)
             if data==NUM_SAMPLES:
                 print('Finish running all sample files!!!!!!!!')
-                return True
+                return
             time.sleep(60)
         except:
             print("Some Exception")
@@ -218,15 +218,15 @@ def main():
     with open("../logs/evaluation_log","a+") as f:
         for i in range(0,NUM_RUNS):
             f.write('============================\n')
-            if check_finish_evaluation()
-                f.write('\nFinish one run !!!!!!!!!!!!!!!!!!!!!!')
-                t = str(datetime.datetime.now())
-                print(t)            
-            # f.write(t)
-            # f.write('\nExport the log for this run')
-            # export_circe_log()
-            # time.sleep(120)
-            # f.write('\nRedeploy the system')
-            # redeploy_system()
+            check_finish_evaluation()
+            f.write('\nFinish one run !!!!!!!!!!!!!!!!!!!!!!')
+            t = str(datetime.datetime.now())
+            print(t)            
+            f.write(t)
+            f.write('\nExport the log for this run')
+            export_circe_log()
+            time.sleep(120)
+            f.write('\nRedeploy the system')
+            redeploy_system()
 if __name__ == '__main__':
     main()

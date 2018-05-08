@@ -333,6 +333,7 @@ class Handler(FileSystemEventHandler):
                 task_mul[temp_name] = [new_file]
                 runtime_info = 'rt_enter '+ temp_name+ ' '+str(ts)
                 send_runtime_profile(runtime_info)
+                send_monitor_data("start")
                 count_dict[temp_name]=int(flag1)-1
             else:
                 task_mul[temp_name] = task_mul[temp_name] + [new_file]
@@ -351,6 +352,7 @@ class Handler(FileSystemEventHandler):
                 ts = time.time()
                 runtime_info = 'rt_exec '+ temp_name+ ' '+str(ts)
                 send_runtime_profile(runtime_info)
+                send_monitor_data("start")
                 input_path = os.path.split(event.src_path)[0]
                 output_path = os.path.join(os.path.split(input_path)[0],'output')
                 dag_task = multiprocessing.Process(target=taskmodule.task, args=(filenames, input_path, output_path))
@@ -359,6 +361,7 @@ class Handler(FileSystemEventHandler):
                 ts = time.time()
                 runtime_info = 'rt_finish '+ temp_name+ ' '+str(ts)
                 send_runtime_profile(runtime_info)
+                send_monitor_data("end")
 
 
 def main():
