@@ -78,7 +78,7 @@ def get_exec_profile_data(exec_home_ip, MONGO_SVC_PORT, num_nodes):
         try:
             collection = db.collection_names(include_system_collections=False)
             num_profilers = len(collection)
-            print(num_profilers)
+            print('--- Number of loaded collection: '+str(num_profilers))
         except Exception as e:
             print('--- Execution profiler info not yet loaded into MongoDB!')
             time.sleep(60)

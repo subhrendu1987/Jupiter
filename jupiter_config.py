@@ -14,7 +14,7 @@ import configparser
 
 HERE       = path.abspath(path.dirname(__file__)) + "/"
 INI_PATH   = HERE + 'jupiter_config.ini'
-DAG = 1 #using DAG application or XDAG application
+DAG = 0 #using DAG application or XDAG application
 
 def get_home_node(file_name):
     with open(file_name) as file:
@@ -72,10 +72,10 @@ def set_globals():
 	KUBECONFIG_PATH         = os.environ['KUBECONFIG']
 
 	# Namespaces
-	DEPLOYMENT_NAMESPACE    = 'test-circe'
-	PROFILER_NAMESPACE      = 'test-profiler'
-	MAPPER_NAMESPACE        = 'test-mapper'
-	EXEC_NAMESPACE          = 'test-exec'
+	DEPLOYMENT_NAMESPACE    = 'quynh-circe'
+	PROFILER_NAMESPACE      = 'quynh-profiler'
+	MAPPER_NAMESPACE        = 'quynh-mapper'
+	EXEC_NAMESPACE          = 'quynh-exec'
 
 	""" Node file path and first task information """
 	global HOME_NODE, HOME_CHILD
@@ -109,8 +109,8 @@ def set_globals():
 		else:
 			WAVE_HOME_IMAGE         = 'docker.io/anrg/wave_home:txdag_greedy'
 			WAVE_WORKER_IMAGE       = 'docker.io/anrg/wave_worker:txdag_greedy'
+		
 		"""Execution profiler home and worker images"""
-
 		EXEC_HOME_IMAGE         = 'docker.io/anrg/exec_home:txdag_random'
 		EXEC_WORKER_IMAGE       = 'docker.io/anrg/exec_worker:txdag_random'
 

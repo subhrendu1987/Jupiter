@@ -47,12 +47,12 @@ RUN mkdir -p /centralized_scheduler/profiler_files_processed
 
 
 # IF YOU WANNA DEPLOY A DIFFERENT APPLICATION JUST CHANGE THIS LINE
-ADD app_specific_files/network_monitoring_app_dag/scripts/ /centralized_scheduler/
-COPY app_specific_files/network_monitoring_app_dag/sample_input /centralized_scheduler/sample_input
+ADD app_specific_files/network_monitoring_app_xdag/scripts/ /centralized_scheduler/
+COPY app_specific_files/network_monitoring_app_xdag/sample_input /centralized_scheduler/sample_input
 RUN mkdir -p /home/darpa/apps/data
 
 
-ADD app_specific_files/network_monitoring_app_dag/configuration.txt /centralized_scheduler/DAG.txt
+ADD app_specific_files/network_monitoring_app_xdag/configuration.txt /centralized_scheduler/DAG.txt
 
 ADD profilers/execution_profiler/start_home.sh /centralized_scheduler/start.sh
 ADD scripts/keep_alive.py /centralized_scheduler/keep_alive.py

@@ -72,7 +72,7 @@ def delete_all_circe():
         # Check if there is a replicaset running by using the label app={key}
         # The label of kubernets are used to identify replicaset associate to each task
         label = "app=" + key
-        resp = extensions_v1_beta1_api.list_replica_set_for_all_namespaces(label_selector = label)
+        resp = extensions_v1_beta1_api.list_namespaced_replica_set(label_selector = label,namespace=namespace)
         # if a replicaset exist, delete it
         
         # print resp.items[0].metadata.namespace
@@ -114,13 +114,13 @@ def delete_all_circe():
 
     # if home exists, delete it 
     if resp:
-        del_resp_0 = extensions_v1_beta1_api.delete_namespaced_deployment('home', namespace, v1_delete_options)
+        del_resp_0 = extensions_v1_beta1_api.delete_namespaced_deployment('home', namespace=namespace, body=v1_delete_options)
         print("Deployment '%s' Deleted. status='%s'" % ('home', str(del_resp_0.status)))
 
     # Check if there is a replicaset running by using the label app=home
     # The label of kubernets are used to identify replicaset associate to each task
     label = "app=home"
-    resp = extensions_v1_beta1_api.list_replica_set_for_all_namespaces(label_selector = label)
+    resp = extensions_v1_beta1_api.list_namespaced_replica_set(label_selector = label,namespace=namespace)
     # if a replicaset exist, delete it
     
     # print resp.items[0].metadata.namespace
@@ -131,7 +131,7 @@ def delete_all_circe():
 
     # Check if there is a pod still running by using the label app='home'
     resp = None
-    resp = core_v1_api.list_namespaced_pod(namespace, label_selector = label)
+    resp = core_v1_api.list_namespaced_pod(namespace=namespace, label_selector = label)
     # if a pod is running just delete it
     if resp.items:
         del_resp_2 = core_v1_api.delete_namespaced_pod(resp.items[0].metadata.name, namespace, v1_delete_options)
@@ -140,12 +140,12 @@ def delete_all_circe():
     # Check if there is a service running by name = task#
     resp = None
     try:
-        resp = core_v1_api.read_namespaced_service('home', namespace)
+        resp = core_v1_api.read_namespaced_service('home', namespace=namespace)
     except ApiException as e:
         print("Exception Occurred")
     # if a service is running, kill it
     if resp:
-        del_resp_2 = core_v1_api.delete_namespaced_service('home', namespace)
+        del_resp_2 = core_v1_api.delete_namespaced_service('home', namespace=namespace)
         print("Service Deleted. status='%s'" % str(del_resp_2.status))    
 
 if __name__ == '__main__':

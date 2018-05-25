@@ -68,7 +68,8 @@ def delete_all_profilers():
         # Check if there is a replicaset running by using the label "app={key} + profiler" e.g, "app=node1profiler"
         # The label of kubernets are used to identify replicaset associate to each task
         label = "app=" + key + "profiler"
-        resp = api.list_replica_set_for_all_namespaces(label_selector = label)
+        resp = api.list_namespaced_replica_set(label_selector = label,namespace=namespace)
+        #resp = api.list_replica_set_for_all_namespaces(label_selector = label)
         # if a replicaset exist, delete it
         # pprint(resp)
         # print resp.items[0].metadata.namespace

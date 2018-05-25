@@ -197,6 +197,9 @@ def k8s_profiler_scheduler():
         time.sleep(30)
 
     # have to somehow make sure that the worker nodes are on and working by this time
+    print('*****************')
+    print(jupiter_config.HOME_NODE)
+    print(type(jupiter_config.HOME_NODE))
     home_dep = write_profiler_specs(name = 'home', label = "homeprofiler",
                                 image = jupiter_config.PROFILER_HOME_IMAGE, 
                                 host = jupiter_config.HOME_NODE, 
@@ -204,6 +207,7 @@ def k8s_profiler_scheduler():
                                              all_node_ips = nexthost_ips,
                                              serv_ip = service_ips['home'],
                                              home_ip = service_ips['home'])
+    
     resp = k8s_beta.create_namespaced_deployment(body = home_dep, namespace = namespace)
     print("Home deployment created. status = '%s'" % str(resp.status))
 

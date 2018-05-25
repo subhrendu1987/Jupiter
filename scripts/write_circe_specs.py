@@ -28,7 +28,7 @@ def add_app_specific_ports(dep):
   
   a = dep['spec']['template']['spec']['containers'][0]['ports']
   for i in config['DOCKER_PORT']:
-    a.append({'containerPort': config['DOCKER_PORT'][i]})
+    a.append({'containerPort': int(config['DOCKER_PORT'][i])})
   return dep
 
 template_home = """
@@ -119,9 +119,9 @@ template_worker = """
             - containerPort: 80
             env:
             - name: FLAG
-              value: {flag}
+              value: '{flag}'
             - name: INPUTNUM
-              value: {inputnum}
+              value: '{inputnum}'
             - name: CHILD_NODES
               value: {child}
             - name: CHILD_NODES_IPS
@@ -178,7 +178,8 @@ def write_circe_deployment_specs(**kwargs):
                                     mongo_port = jupiter_config.MONGO_DOCKER,
                                     **kwargs)
 
-    dep = yaml.load(specific_yaml, Loader=yaml.BaseLoader)
+    dep = yaml.load(specific_yaml)
+    #dep = yaml.load(specific_yaml, Loader=yaml.BaseLoader)
     
     dep = add_app_specific_ports(dep)
 

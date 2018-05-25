@@ -277,7 +277,7 @@ def k8s_exec_scheduler():
                 own_ip = service_ips[key],
                 all_node = all_node,
                 all_node_ips = all_node_ips)
-            pprint(dep)
+            #pprint(dep)
 
 
             # # Call the Kubernetes API to create the deployment
@@ -312,7 +312,7 @@ def k8s_exec_scheduler():
             break
         time.sleep(30)
 
-    task = 'home'
+    task = "home"
     key = 'home'
     home_dep = write_exec_specs_home_control(flag = str(flag), inputnum = str(inputnum),
             name = task, node_name = task,
@@ -323,7 +323,7 @@ def k8s_exec_scheduler():
             all_node = all_node,
             all_node_ips = all_node_ips,
             allprofiler_ips = allprofiler_ips,
-            allprofiler_names = allprofiler_names)
+            allprofiler_names = allprofiler_names, label = "home")
 
     resp = k8s_beta.create_namespaced_deployment(body = home_dep, namespace = namespace)
     print("Home deployment created. status = '%s'" % str(resp.status))

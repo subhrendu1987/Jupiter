@@ -145,7 +145,7 @@ def main():
     # load the list of links from the csv file
     links_info = 'central_input/link_list.txt'
     df_links   = pd.read_csv(links_info, header = 0)
-    df_links.replace('(^\s+|\s+$)', '', regex = True, inplace = True)
+    #df_links.replace('(^\s+|\s+$)', '', regex = True, inplace = True)
 
     # check the folder for putting output files
     global scheduling_folder, output_file

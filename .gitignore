@@ -102,3 +102,6 @@ ENV/
 
 # CTags
 .tags*
+
+# Logs
+.log

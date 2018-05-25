@@ -70,7 +70,8 @@ def delete_all_exec():
         # Check if there is a replicaset running by using the label app={key}
         # The label of kubernets are used to identify replicaset associate to each task
         label = "app=" + key
-        resp = extensions_v1_beta1_api.list_replica_set_for_all_namespaces(label_selector = label)
+        resp = extensions_v1_beta1_api.list_namespaced_replica_set(label_selector = label,namespace=namespace)
+        #resp = extensions_v1_beta1_api.list_replica_set_for_all_namespaces(label_selector = label)
         # if a replicaset exist, delete it
         
         # print resp.items[0].metadata.namespace
@@ -118,7 +119,8 @@ def delete_all_exec():
     # Check if there is a replicaset running by using the label app=home
     # The label of kubernets are used to identify replicaset associate to each task
     label = "app=home"
-    resp = extensions_v1_beta1_api.list_replica_set_for_all_namespaces(label_selector = label)
+    resp = extensions_v1_beta1_api.list_namespaced_replica_set(label_selector = label,namespace=namespace)
+    #resp = extensions_v1_beta1_api.list_replica_set_for_all_namespaces(label_selector = label)
     # if a replicaset exist, delete it
     
     # print resp.items[0].metadata.namespace
@@ -195,7 +197,8 @@ def delete_all_exec():
         # Check if there is a replicaset running by using the label "app={key} + profiler" e.g, "app=node1profiler"
         # The label of kubernets are used to identify replicaset associate to each task
         label = "app=" + key + "exec_profiler"
-        resp = api.list_replica_set_for_all_namespaces(label_selector = label)
+        resp = api.list_namespaced_replica_set(label_selector = label,namespace=namespace)
+        #resp = api.list_replica_set_for_all_namespaces(label_selector = label)
         # if a replicaset exist, delete it
         # pprint(resp)
         # print resp.items[0].metadata.namespace

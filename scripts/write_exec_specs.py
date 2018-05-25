@@ -28,7 +28,8 @@ def add_app_specific_ports(dep):
   
   a = dep['spec']['template']['spec']['containers'][0]['ports']
   for i in config['DOCKER_PORT']:
-    a.append({'containerPort': config['DOCKER_PORT'][i]})
+    pass
+    a.append({'containerPort': int(config['DOCKER_PORT'][i])})
   return dep
 
 template_nondag = """
@@ -53,9 +54,9 @@ template_nondag = """
             - containerPort: {flask_port}
             env:
             - name: FLAG
-              value: {flag}
+              value: '{flag}'
             - name: INPUTNUM
-              value: {inputnum}
+              value: '{inputnum}'
             - name: CHILD_NODES
               value: {child}
             - name: CHILD_NODES_IPS
@@ -118,7 +119,8 @@ def write_exec_specs_non_dag_tasks(**kwargs):
                                     mongo_port = jupiter_config.MONGO_DOCKER,
                                     **kwargs)
 
-    dep = yaml.load(specific_yaml, Loader=yaml.BaseLoader)
+    dep = yaml.load(specific_yaml)
+    #dep = yaml.load(specific_yaml, Loader=yaml.BaseLoader)
 
     return add_app_specific_ports(dep)
 
@@ -131,7 +133,7 @@ template_home = """
       template:
         metadata:
           labels:
-            app: {name}
+            app: {label}
         spec:
           containers:
           - name: {name}
@@ -141,11 +143,12 @@ template_home = """
             - containerPort: {ssh_port}
             - containerPort: {mongo_port}
             - containerPort: 80
+            - containerPort: {flask_port}
             env:
             - name: FLAG
-              value: {flag}
+              value: '{flag}'
             - name: INPUTNUM
-              value: {inputnum}
+              value: '{inputnum}'
             - name: CHILD_NODES
               value: {child}
             - name: CHILD_NODES_IPS
@@ -210,7 +213,10 @@ def write_exec_specs_home_control(**kwargs):
                                     mongo_port = jupiter_config.MONGO_DOCKER,
                                     **kwargs)
 
-    dep = yaml.load(specific_yaml, Loader=yaml.BaseLoader)
+    dep = yaml.load(specific_yaml)
+    print('YAML fileeeeeeeeeee')
+    print(dep)
+    #dep = yaml.load(specific_yaml, Loader=yaml.BaseLoader)
 
     return add_app_specific_ports(dep)
 
