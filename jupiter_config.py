@@ -14,7 +14,7 @@ import configparser
 
 HERE       = path.abspath(path.dirname(__file__)) + "/"
 INI_PATH   = HERE + 'jupiter_config.ini'
-DAG = 0 #using DAG application or XDAG application
+DAG = 1 #using DAG application or XDAG application
 
 def get_home_node(file_name):
     with open(file_name) as file:
@@ -56,7 +56,9 @@ def set_globals():
 
 	NETR_PROFILER_PATH      = HERE + 'profilers/network_resource_profiler/'
 	EXEC_PROFILER_PATH      = HERE + 'profilers/execution_profiler/'
-	CIRCE_PATH              = HERE + 'circe/'
+	#CIRCE_PATH              = HERE + 'circe/'
+	### add pricing modules to CIRCE
+	CIRCE_PATH              = HERE + 'pricing_circe/'
 	HEFT_PATH               = HERE + 'task_mapper/heft/'
 	WAVE_PATH               = HERE + 'task_mapper/wave/random_wave/'
 	SCRIPT_PATH             = HERE + 'scripts/'
@@ -83,7 +85,8 @@ def set_globals():
 	HOME_NODE               = get_home_node(HERE + 'nodes.txt')
 	HOME_CHILD              = 'localpro'
 
-	global HOME_IMAGE, WORKER_IMAGE
+	#global HOME_IMAGE, WORKER_IMAGE
+	global HOME_IMAGE, WORKER_CONTROLLER_IMAGE, WORKER_COMPUTING_IMAGE
 	global PROFILER_HOME_IMAGE, PROFILER_WORKER_IMAGE
 	global WAVE_HOME_IMAGE, WAVE_WORKER_IMAGE
 	global EXEC_HOME_IMAGE, EXEC_WORKER_IMAGE
@@ -95,8 +98,12 @@ def set_globals():
 	if DAG == 0: # XDAG images
 
 		"""CIRCE home and worker images"""
-		HOME_IMAGE              = 'docker.io/anrg/circe_home:txdag'
-		WORKER_IMAGE            = 'docker.io/anrg/circe_worker:txdag'
+		#HOME_IMAGE              = 'docker.io/anrg/circe_home:txdag'
+		# WORKER_IMAGE            = 'docker.io/anrg/circe_worker:txdag'
+
+		HOME_IMAGE = 'docker.io/anrg/pricing_circe_home:txdag'
+		WORKER_CONTROLLER_IMAGE            = 'docker.io/anrg/pricing_circe_controller:tdag'
+		WORKER_COMPUTING_IMAGE            = 'docker.io/anrg/pricing_circe_computing:tdag'
 
 		"""DRUPE home and worker images"""
 		PROFILER_HOME_IMAGE     = 'docker.io/anrg/profiler_home:txdag'
@@ -125,8 +132,11 @@ def set_globals():
 
 	else:# DAG images
 		"""CIRCE home and worker images"""
-		HOME_IMAGE              = 'docker.io/anrg/circe_home:tdag'
-		WORKER_IMAGE            = 'docker.io/anrg/circe_worker:tdag'
+		# HOME_IMAGE              = 'docker.io/anrg/circe_home:tdag'
+		# WORKER_IMAGE            = 'docker.io/anrg/circe_worker:tdag'
+		HOME_IMAGE              = 'docker.io/anrg/pricing_circe_home:tdag'
+		WORKER_CONTROLLER_IMAGE            = 'docker.io/anrg/pricing_circe_controller:tdag'
+		WORKER_COMPUTING_IMAGE            = 'docker.io/anrg/pricing_circe_computing:tdag'
 
 		"""DRUPE home and worker images"""
 		PROFILER_HOME_IMAGE     = 'docker.io/anrg/profiler_home:tdag'
@@ -155,6 +165,5 @@ def set_globals():
 	# APP_PATH                = HERE  + 'app_specific_files/network_monitoring_app/'
 	# APP_NAME                = 'app_specific_files/network_monitoring_app'
 
-	
 if __name__ == '__main__':
 	set_globals()

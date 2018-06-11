@@ -52,11 +52,6 @@ def prepare_global():
     """
     Prepare global information (Node info, relations between tasks, initial task)
     """
-
-    #  Load all the confuguration
-    ##
-    ## Load all the confuguration
-    ##
     INI_PATH = '/jupiter_config.ini'
 
     config = configparser.ConfigParser()

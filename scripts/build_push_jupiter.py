@@ -9,7 +9,8 @@ __version__ = "2.0"
 import sys
 sys.path.append("../")
 
-from build_push_circe import *
+# from build_push_circe import *
+from build_push_pricing_circe import *
 from build_push_profiler import *
 from build_push_wave import *
 from build_push_exec import *
@@ -17,7 +18,8 @@ from build_push_heft import *
 
 if __name__ == '__main__':
 	build_push_wave()
-	build_push_circe()
+	#build_push_circe()
+	build_push_pricing_circe()
 	build_push_profiler()
 	build_push_exec()
 	build_push_heft()

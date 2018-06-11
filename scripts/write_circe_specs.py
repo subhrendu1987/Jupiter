@@ -1,4 +1,4 @@
-__author__ = "Pradipta Ghosh, Pranav Sakulkar, Quynh Nguyen, Jason A Tran,  Bhaskar Krishnamachari"
+__author__ = "Pradipta Ghosh, Quynh Nguyen, Pranav Sakulkar, Jason A Tran,  Bhaskar Krishnamachari"
 __copyright__ = "Copyright (c) 2018, Autonomous Networks Research Group. All rights reserved."
 __license__ = "GPL"
 __version__ = "2.0"
@@ -185,4 +185,75 @@ def write_circe_deployment_specs(**kwargs):
 
 
 
+    return dep
+
+
+template_computing = """
+apiVersion: extensions/v1beta1
+kind: Deployment
+metadata:
+  name: {name}
+spec:
+  template:
+    metadata:
+      labels:
+        app: {label}
+    spec:
+      nodeSelector:
+        kubernetes.io/hostname: {host}
+      containers:
+      - name: wave-scheduler
+        imagePullPolicy: Always
+        image: {image}
+        ports:
+        - containerPort: {flask_port}
+        env:
+        - name: ALL_NODES
+          value: {all_node}
+        - name: ALL_NODES_IPS
+          value: {all_node_ips}
+        - name: SELF_NAME
+          value: {name}
+        - name: SELF_IP
+          value: {self_ip}
+        - name: PROFILERS
+          value: {profiler_ip}
+        - name: ALL_PROFILERS
+          value: {all_profiler_ips}
+        - name: EXECUTION
+          value: {execution_ip}
+        - name: ALL_EXECUTION
+          value: {all_execution_ips} 
+"""
+
+def write_circe_computing_specs(**kwargs):
+    """
+    This function genetares the description yaml for WAVE
+     
+    In this case, call argument should be:
+    
+      -   name: {name}
+      -   app: {label}
+      -   kubernetes.io/hostname: {host}
+      -   image: {image}
+      -   Flask Port: {flask_port}
+      -   ALL_NODES: {all_node}
+      -   ALL_NODES_IPS: {all_node_ips}
+      -   SELF_NAME: {name}
+      -   SELF_IP: {serv_ip}
+      -   HOME_IP: {home_ip}
+      -   HOME_NAME: {home_name}
+      -   PROFILER: {profiler_ip}
+    
+    Args:
+        ``**kwargs``: list of key value pair
+    
+    Returns:
+        dict: loaded configuration 
+    """
+    jupiter_config.set_globals()
+    
+    specific_yaml = template_computing.format(flask_port = jupiter_config.FLASK_DOCKER,
+                                    **kwargs)
+    dep = yaml.load(specific_yaml)
     return dep
