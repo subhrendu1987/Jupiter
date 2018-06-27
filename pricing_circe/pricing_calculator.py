@@ -9,54 +9,61 @@ __copyright__ = "Copyright (c) 2018, Autonomous Networks Research Group. All rig
 __license__ = "GPL"
 __version__ = "3.0"
 
+import sys
+sys.path.append("../")
+import configparser
+import jupiter_config
 import os
 import json
-from multiprocessing import Process
+from multiprocessing import Process, Manager
 import multiprocessing
 from flask import Flask, request
 from os import path
+import json
+import _thread
+import csv
+from pymongo import MongoClient
+import pandas as pd
+import time
+
 
 app = Flask(__name__)
 
-def set_global_info():
-	"""Get information of corresponding profiler (network profiler, execution profiler)"""
-	global profiler_ip, execution_ip, self_name,network_map
-	profiler_ip = os.environ['PROFILERS'].split(' ')
+def prepare_global_info():
+    """Get information of corresponding profiler (network profiler, execution profiler)"""
+    global profiler_ip, exec_home_ip, self_name,self_ip,network_map, num_nodes
+    profiler_ip = os.environ['ALL_PROFILERS'].split(' ')
     profiler_ip = [info.split(":") for info in profiler_ip]
-	execution_ip = os.environ['EXECUTION']
-	self_name = os.environ['SELF_NAME']
-	node_list = [info[0] for info in profiler_ip]
+    exec_home_ip = os.environ['EXECUTION_HOME_IP']
+    self_name = os.environ['SELF_NAME']
+    self_ip = os.environ['SELF_IP']
+    node_list = [info[0] for info in profiler_ip]
     node_IP = [info[1] for info in profiler_ip]
     network_map = dict(zip(node_IP, node_list))
+    num_nodes = len(profiler_ip)
 
-	global execution_info, network_info
-	network_info = []
-	execution_info = []
+    global execution_info,manager, task_mul
+    execution_info = []
+    manager = Manager()
+    task_mul = manager.dict()
 
-def get_exec_profile_data(self_name, exec_home_ip, MONGO_SVC_PORT):
-    """Collect the execution profile from the home execution profiler's MongoDB
-    
-    Args:
-        self_name (str): node name
-        exec_home_ip (str): IP of execution home
-        MONGO_SVC_PORT (str): mongo service port
+
+def get_exec_profile_data():
+    """Collect the execution profile from the home execution profiler's MongoDB and store it in text file.
     """
-
-    conn = False
-    while not conn:
-        try:
-            client_mongo = MongoClient('mongodb://'+exec_home_ip+':'+MONGO_SVC_PORT+'/')
-            db = client_mongo.execution_profiler
-            conn = True
-        except:
-            print('Error connection')
-            time.sleep(60)
-
+    print("Starting execution profile collection thread")
+    try:
+        client_mongo = MongoClient('mongodb://'+exec_home_ip+':'+str(MONGO_SVC_PORT)+'/')
+        db = client_mongo.execution_profiler
+        conn = True
+    except:
+        print('Error connection to mongoDB')
+    
     print(db)
     while True:
-	    try:
-	    	logging =db[self_name].find()
-	    except Exception as e:
+        try:
+            logging =db[self_name].find()
+        except Exception as e:
             print('--- Execution profiler info not yet loaded into MongoDB!')
             time.sleep(60)
 
@@ -66,68 +73,93 @@ def get_exec_profile_data(self_name, exec_home_ip, MONGO_SVC_PORT):
         execution_info.append(info_to_csv)
 
     print('Execution information has already been provided')
-    print(execution_info)
-    
+    #print(execution_info)
+    with open('execution_log.txt','w') as f:
+        writer = csv.writer(f, quoting=csv.QUOTE_ALL)
+        writer.writerows(execution_info)
 
-def get_network_profile_data(profiler_ip, MONGO_SVC_PORT, network_map):
-    """Collect the network profile from local MongoDB peer
+
+def get_updated_network_profile_data(profiler_ip, MONGO_SVC_PORT, network_map):
+    """Collect the network profile information from local MONGODB database
     
     Args:
         - profiler_ip (list): IPs of network profilers
         - MONGO_SVC_PORT (str): Mongo service port
         - network_map (dict): mapping of node IPs and node names
     """
-    print(profiler_ip)
-    for ip in profiler_ip:
-        print('Check Network Profiler IP: '+ip[0]+ '-' +ip[1])
-        client_mongo = MongoClient('mongodb://'+ip[1]+':'+MONGO_SVC_PORT+'/')
+    print("Collect network profile data")   
+    network_info = []
+    try:
+        client_mongo = MongoClient('mongodb://'+self_ip+':'+MONGO_SVC_PORT+'/')
         db = client_mongo.droplet_network_profiler
         collection = db.collection_names(include_system_collections=False)
         num_nb = len(collection)-1
-        while num_nb==-1:
+        if num_nb == -1:
             print('--- Network profiler mongoDB not yet prepared')
-            time.sleep(60)
-            collection = db.collection_names(include_system_collections=False)
-            num_nb = len(collection)-1
-        print('--- Number of neighbors: '+str(num_nb))
-        num_rows = db[ip[1]].count()
-        while num_rows < num_nb:
+            return network_info
+        num_rows = db[self_ip].count() 
+        if num_rows < num_nb:
             print('--- Network profiler regression info not yet loaded into MongoDB!')
-            time.sleep(60)
-            num_rows = db[ip[1]].count()
-        logging =db[ip[1]].find().limit(num_nb)
+            return network_info
+        logging =db[self_ip].find().limit(num_nb)  
         for record in logging:
             # print(record)
             # Source ID, Source IP, Destination ID, Destination IP, Parameters
             info_to_csv=[network_map[record['Source[IP]']],record['Source[IP]'],network_map[record['Destination[IP]']], record['Destination[IP]'],str(record['Parameters'])]
-            network_info.append(info_to_csv)
-    print('Network information has already been provided')
-    #print(network_info)
-    with open('/heft/network_log.txt','w') as f:
-        writer = csv.writer(f, quoting=csv.QUOTE_ALL)
-        writer.writerows(network_info)
-    return
+            network_info.append(info_to_csv) 
+        print('Network information has already been provided')
+        print("Network profiles: ", network_info)
+        return network_info
+    except Exception as e:
+        print("Network request failed. Will try again, details: " + str(e))
+    
+
+def get_updated_resource_profile_data():
+    """Requesting resource profiler data using flask for its corresponding profiler node
+    """
+    print("Collect resource profile data")  
+    resource_info = [] 
+    try:
+        for c in range(0,num_retries):
+            r = requests.get("http://" + self_ip + ":" + str(FLASK_SVC) + "/all")
+            result = r.json()
+            if len(result) != 0:
+                resource_info=json.dumps(result)
+                break
+            time.sleep(60)
+
+        if c == num_retries:
+            print("Exceeded maximum try times.")
+
+        print("Got profiler data from http://" + os.environ['PROFILER'] + ":" + str(FLASK_SVC))
+        print("Resource profiles: ", resource_info)
+        return resource_info
+
+    except Exception as e:
+        print("Resource request failed. Will try again, details: " + str(e))
+    
+    
 
 
-def pricing_calculate(file_name, task_name, profiler_ip,execution_ip,task_queue):
-	"""Calculate price required to perform the task with given input
-	
-	Args:
-	    profiler_ip (str): Network and resource profiler IP
-	    execution_ip (TYPE): Execution profiler IP
-	    task_queue (TYPE): Current task queue
-	
-	Returns:
-	    float: calculated price
-	"""
-	return price
+
+def pricing_calculate(file_name, task_name):
+    """Calculate price required to perform the task with given input based on network information, resource information, execution information and task queue size
+    
+    Args:
+        file_name (str): incoming file name
+        task_name (str): incoming task name
+    
+    Returns:
+        float: calculated price
+    """
+    return price
 
 def receive_price_request(file_name, task_name):
     """Receive price request from pricing calculator
     
     Args:
-        file_name (TYPE): Description
-        task_name (TYPE): Description
+        file_name (str): incoming file name
+        task_name (str): incoming task name
     """
 
 
@@ -135,11 +167,35 @@ def execute_task(file_name, task_name):
     """Execute the task given the input file
     
     Args:
-        file_name (str): Incoming file name
-        task_name (str): Incoming task name
+        file_name (str): incoming file name
+        task_name (str): incoming task name
     """
 
 def main():
+    ## Load all the configuration
+    global username, password, ssh_port,num_retries, MONGO_DOCKER, MONGO_SVC, FLASK_SVC, FLASK_DOCKER
+    # Load all the confuguration
+    INI_PATH = '/jupiter_config.ini'
+    config = configparser.ConfigParser()
+    config.read(INI_PATH)
+    username    = config['AUTH']['USERNAME']
+    password    = config['AUTH']['PASSWORD']
+    ssh_port    = int(config['PORT']['SSH_SVC'])
+    num_retries = int(config['OTHER']['SSH_RETRY_NUM'])
+    pricing_threshold = int(config['OTHER']['PRICING_THRESHOLD'])
+    MONGO_SVC    = int(config['PORT']['MONGO_SVC'])
+    MONGO_DOCKER = int(config['PORT']['MONGO_DOCKER'])
+    FLASK_SVC    = int(config['PORT']['FLASK_SVC'])
+    FLASK_DOCKER = int(config['PORT']['FLASK_DOCKER'])
+
+
+    prepare_global_info()
+
+    print('------------------------------------------------------------')
+    print("\n Read execution profiler information : \n")
+    _thread.start_new_thread(get_exec_profile_data, (exec_home_ip, MONGO_SVC,num_nodes))
+
+    
 
 if __name__ == '__main__':
     main()

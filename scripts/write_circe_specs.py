@@ -220,10 +220,10 @@ spec:
           value: {profiler_ip}
         - name: ALL_PROFILERS
           value: {all_profiler_ips}
-        - name: EXECUTION
-          value: {execution_ip}
-        - name: ALL_EXECUTION
-          value: {all_execution_ips} 
+        - name: EXECUTION_HOME_IP
+          value: {execution_home_ip} 
+        - name: HOME_NODE
+          value: {home_node_ip}
 """
 
 def write_circe_computing_specs(**kwargs):

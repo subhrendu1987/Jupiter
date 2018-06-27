@@ -30,10 +30,11 @@ def set_globals():
 	config = configparser.ConfigParser()
 	config.read(INI_PATH)
 	"""User input for scheduler information"""
-	global STATIC_MAPPING, SCHEDULER 
+	global STATIC_MAPPING, SCHEDULER, PRICING
 
 	STATIC_MAPPING          = int(config['CONFIG']['STATIC_MAPPING'])
 	SCHEDULER               = int(config['CONFIG']['SCHEDULER'])
+	PRICING  				= int(config['CONFIG']['PRICING'])
 
 	"""Authorization information in the containers"""
 	global USERNAME, PASSWORD

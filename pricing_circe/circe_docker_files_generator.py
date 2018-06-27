@@ -65,6 +65,7 @@ ADD {app_file}/configuration.txt /configuration.txt
 ADD nodes.txt /nodes.txt
 ADD jupiter_config.ini /jupiter_config.ini
 
+ADD pricing_circe/pricing_coordinator.py /centralized_scheduler/pricing_coordinator.py
 ADD pricing_circe/start_home.sh /start.sh
 RUN chmod +x /start.sh
 RUN chmod +x /central_mongod
@@ -117,7 +118,6 @@ RUN mkdir -p /centralized_scheduler/input
 RUN mkdir -p /centralized_scheduler/output
 RUN mkdir -p /centralized_scheduler/runtime
 ADD pricing_circe/monitor.py /centralized_scheduler/monitor.py
-ADD pricing_circe/pricing_coordinator.py /centralized_scheduler/pricing_coordinator.py
 RUN mkdir -p /home/darpa/apps/data
 
 ADD pricing_circe/rt_profiler_data_update.py  /centralized_scheduler/rt_profiler_data_update.py
@@ -126,8 +126,9 @@ ADD pricing_circe/rt_profiler_data_update.py  /centralized_scheduler/rt_profiler
 ADD {app_file}/scripts/ /centralized_scheduler/
 
 ADD jupiter_config.ini /jupiter_config.ini
+ADD jupiter_config.py /jupiter_config.py
 
-
+ADD pricing_circe/pricing_coordinator.py /centralized_scheduler/pricing_coordinator.py
 ADD pricing_circe/start_worker.sh /start.sh
 RUN chmod +x /start.sh
 
@@ -177,7 +178,6 @@ RUN echo "export VISIBLE=now" >> /etc/profile
 RUN mkdir -p /centralized_scheduler/input
 RUN mkdir -p /centralized_scheduler/output
 RUN mkdir -p /centralized_scheduler/runtime
-ADD pricing_circe/pricing_calculator.py /centralized_scheduler/pricing_calculator.py
 RUN mkdir -p /home/darpa/apps/data
 
 ADD pricing_circe/rt_profiler_data_update.py  /centralized_scheduler/rt_profiler_data_update.py
@@ -186,8 +186,9 @@ ADD pricing_circe/rt_profiler_data_update.py  /centralized_scheduler/rt_profiler
 ADD {app_file}/scripts/ /centralized_scheduler/
 
 ADD jupiter_config.ini /jupiter_config.ini
+ADD jupiter_config.py /jupiter_config.py
 
-
+ADD pricing_circe/pricing_calculator.py /centralized_scheduler/pricing_calculator.py
 ADD pricing_circe/start_computing_worker.sh /start.sh
 RUN chmod +x /start.sh
 

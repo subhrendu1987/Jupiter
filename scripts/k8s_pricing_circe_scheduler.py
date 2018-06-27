@@ -126,7 +126,7 @@ def check_status_circe_computing():
     return result
 
 # if __name__ == '__main__':
-def k8s_pricing_circe_scheduler(dag_info , temp_info, profilers_ips, execution_ips):
+def k8s_pricing_circe_scheduler(dag_info , temp_info, profiler_ips, execution_ips):
     """
         This script deploys CIRCE in the system. 
     """
@@ -168,6 +168,7 @@ def k8s_pricing_circe_scheduler(dag_info , temp_info, profilers_ips, execution_i
     pprint(dag_info[2])
     service_ips = {}; #list of all service IPs including home and task controllers
     computing_service_ips = {}
+    all_profiler_ips = ''
 
     print('-------- First create the home node service')
     """
@@ -249,6 +250,7 @@ def k8s_pricing_circe_scheduler(dag_info , temp_info, profilers_ips, execution_i
 
             # print resp.spec.cluster_ip
             computing_service_ips[node] = resp.spec.cluster_ip
+            all_profiler_ips = all_profiler_ips + ':' + profiler_ips[node]
 
     all_computing_ips = ':'.join(computing_service_ips.values())
     all_computing = ':'.join(computing_service_ips.keys())
@@ -259,6 +261,44 @@ def k8s_pricing_circe_scheduler(dag_info , temp_info, profilers_ips, execution_i
     Start circe
     """
 
+    print('---------  Start computing nodes')
+    """
+        Start computing nodes
+    """
+
+    for i in nodes:
+
+        # print nodes[i][0]
+        
+        """
+            We check whether the node is a home / master.
+            We do not run the controller on the master.
+        """
+        if i != 'home':
+
+            """
+                Generate the yaml description of the required deployment for WAVE workers
+            """
+            print(execution_ips)
+            dep = write_circe_computing_specs(name = i, label =  i, image = jupiter_config.WORKER_COMPUTING_IMAGE,
+                                             host = nodes[i][0], all_node = all_computing,
+                                             all_node_ips = all_computing_ips,
+                                             self_ip = computing_service_ips[i],
+                                             profiler_ip = profiler_ips[i],
+                                             all_profiler_ips = all_profiler_ips,
+                                             execution_home_ip = execution_ips['home'],
+                                             home_node_ip = service_ips.get("home"))
+            # # pprint(dep)
+            # # Call the Kubernetes API to create the deployment
+            resp = k8s_beta.create_namespaced_deployment(body = dep, namespace = namespace)
+            print("Deployment created. status ='%s'" % str(resp.status))
+
+
+    while 1:
+        if check_status_circe_computing():
+            break
+        time.sleep(30)
+    
     print('--------- Start task controllers')
     """
         Start task controllers
@@ -308,39 +348,9 @@ def k8s_pricing_circe_scheduler(dag_info , temp_info, profilers_ips, execution_i
         resp = k8s_beta.create_namespaced_deployment(body = dep, namespace = namespace)
         print("Deployment created. status = '%s'" % str(resp.status))
 
-    print('---------  Start computing nodes')
-    """
-        Start computing nodes
-    """
-
-    for i in nodes:
-
-        # print nodes[i][0]
-        
-        """
-            We check whether the node is a home / master.
-            We do not run the controller on the master.
-        """
-        if i != 'home':
-
-            """
-                Generate the yaml description of the required deployment for WAVE workers
-            """
-            dep = write_circe_computing_specs(name = i, label =  i, image = jupiter_config.WORKER_COMPUTING_IMAGE,
-                                             host = nodes[i][0], all_node = all_computing,
-                                             all_node_ips = all_computing_ips,
-                                             self_ip = computing_service_ips[i],
-                                             profiler_ip = profiler_ips[i],
-                                             all_profiler_ips = all_profiler_ips,
-                                             execution_ip = execution_ips[i],
-                                             all_execution_ips = all_execution_ips)
-            # # pprint(dep)
-            # # Call the Kubernetes API to create the deployment
-            resp = k8s_beta.create_namespaced_deployment(body = dep, namespace = namespace)
-            print("Deployment created. status ='%s'" % str(resp.status))
 
     while 1:
-        if check_status_circe_controller(dag) and check_status_circe_computing():
+        if check_status_circe_controller(dag):
             break
         time.sleep(30)
 

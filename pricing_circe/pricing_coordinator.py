@@ -9,8 +9,14 @@ __copyright__ = "Copyright (c) 2018, Autonomous Networks Research Group. All rig
 __license__ = "GPL"
 __version__ = "3.0"
 
+import sys
+sys.path.append("../")
+import configparser
+import jupiter_config
 import os
 import json
+from multiprocessing import Process
+import multiprocessing
 from flask import Flask, request
 from os import path
 
@@ -56,6 +62,7 @@ def retrieve_results():
     """Retrieve results from computing node
     """
 def main():
+    
 
 if __name__ == '__main__':
 

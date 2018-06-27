@@ -173,7 +173,7 @@ def delete_all_pricing_circe():
 
         # Check if there is a replicaset running by using the label "app=wave_" + key e.g, "app=wave_node1"
         # The label of kubernets are used to identify replicaset associate to each task
-        label = "app=circe_" + key
+        label = "app=" + key
         resp = api.list_namespaced_replica_set(label_selector = label,namespace=namespace)
         # if a replicaset exist, delete it
         # pprint(resp)

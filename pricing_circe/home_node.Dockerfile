@@ -4,7 +4,7 @@ FROM ubuntu:16.04
 RUN apt-get -yqq update
 RUN apt-get -yqq install python3-pip python3-dev libssl-dev libffi-dev
 RUN apt-get install -y openssh-server mongodb
-ADD circe/requirements.txt /requirements.txt
+ADD pricing_circe/requirements.txt /requirements.txt
 RUN apt-get -y install build-essential libssl-dev libffi-dev python-dev
 RUN pip3 install --upgrade pip
 RUN apt-get install -y sshpass nano 
@@ -33,25 +33,26 @@ RUN mkdir -p /output
 RUN mkdir -p /runtime
 
 # Add input files
-COPY  app_specific_files/network_monitoring_app_xdag/sample_input /sample_input
-COPY  app_specific_files/network_monitoring_app_xdag/sample_input2 /sample_input2
+COPY  app_specific_files/network_monitoring_app_dag/sample_input /sample_input
+COPY  app_specific_files/network_monitoring_app_dag/sample_input2 /sample_input2
 
 # Add the mongodb scripts
-ADD circe/runtime_profiler_mongodb /central_mongod
-ADD circe/rt_profiler_update_mongo.py /run_update.py
+ADD pricing_circe/runtime_profiler_mongodb /central_mongod
+ADD pricing_circe/rt_profiler_update_mongo.py /run_update.py
 
-ADD circe/readconfig.py /readconfig.py
-ADD circe/scheduler.py /scheduler.py
+ADD pricing_circe/readconfig.py /readconfig.py
+ADD pricing_circe/scheduler.py /scheduler.py
 ADD jupiter_config.py /jupiter_config.py
-ADD circe/evaluate.py /evaluate.py
+ADD pricing_circe/evaluate.py /evaluate.py
 
 # Add the task speficific configuration files
-ADD app_specific_files/network_monitoring_app_xdag/configuration.txt /configuration.txt
+ADD app_specific_files/network_monitoring_app_dag/configuration.txt /configuration.txt
 
 ADD nodes.txt /nodes.txt
 ADD jupiter_config.ini /jupiter_config.ini
 
-ADD circe/start_home.sh /start.sh
+ADD pricing_circe/pricing_coordinator.py /centralized_scheduler/pricing_coordinator.py
+ADD pricing_circe/start_home.sh /start.sh
 RUN chmod +x /start.sh
 RUN chmod +x /central_mongod
 

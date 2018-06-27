@@ -31,7 +31,6 @@ RUN echo "export VISIBLE=now" >> /etc/profile
 RUN mkdir -p /centralized_scheduler/input
 RUN mkdir -p /centralized_scheduler/output
 RUN mkdir -p /centralized_scheduler/runtime
-ADD pricing_circe/monitor.py /centralized_scheduler/monitor.py
 RUN mkdir -p /home/darpa/apps/data
 
 ADD pricing_circe/rt_profiler_data_update.py  /centralized_scheduler/rt_profiler_data_update.py
@@ -41,8 +40,8 @@ ADD app_specific_files/network_monitoring_app_dag/scripts/ /centralized_schedule
 
 ADD jupiter_config.ini /jupiter_config.ini
 
-ADD pricing_circe/pricing_coordinator.py /centralized_scheduler/pricing_coordinator.py
-ADD pricing_circe/start_worker.sh /start.sh
+ADD pricing_circe/pricing_calculator.py /centralized_scheduler/pricing_calculator.py
+ADD pricing_circe/start_computing_worker.sh /start.sh
 RUN chmod +x /start.sh
 
 WORKDIR /

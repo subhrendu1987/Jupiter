@@ -6,6 +6,7 @@ service ssh start
 read -a nodes <<<${ALL_NODES//:/ }
 read -a nodes_ips <<<${ALL_NODES_IPS//:/ }
 
+
 # Check if lengths are equal
 if [ ${#nodes[@]} -ne ${#nodes_ips[@]} ]; then
     echo "Something is wrong with the environment variables!"
@@ -21,4 +22,4 @@ python3 -u centralized_scheduler/rt_profiler_data_update.py &
 
 # Run python with '-u' for unbuffered prints so the Kubernetes log system gets
 # all the print statements.
-python3 -u pricing_calculator.py
+python3 -u centralized_scheduler/pricing_calculator.py

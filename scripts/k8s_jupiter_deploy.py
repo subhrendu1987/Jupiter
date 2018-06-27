@@ -75,6 +75,7 @@ def k8s_jupiter_deploy():
 
 
         # start the execution profilers
+        
         execution_ips = get_all_execs()
         #execution_ips = exec_profiler_function()
 
