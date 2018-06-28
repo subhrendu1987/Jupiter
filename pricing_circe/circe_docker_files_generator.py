@@ -190,6 +190,9 @@ ADD jupiter_config.py /jupiter_config.py
 
 ADD pricing_circe/pricing_calculator.py /centralized_scheduler/pricing_calculator.py
 ADD pricing_circe/start_computing_worker.sh /start.sh
+ADD scripts/keep_alive.py /centralized_scheduler/keep_alive.py
+ADD {app_file}/configuration.txt  /centralized_scheduler/dag.txt
+ADD {app_file}/scripts/config.json /centralized_scheduler/config.json
 RUN chmod +x /start.sh
 
 WORKDIR /

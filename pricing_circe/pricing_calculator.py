@@ -40,7 +40,7 @@ def prepare_global_info():
     node_list = [info[0] for info in profiler_ip]
     node_IP = [info[1] for info in profiler_ip]
     network_map = dict(zip(node_IP, node_list))
-    num_nodes = len(profiler_ip)
+    num_nodes = len(profiler_ip[0])
 
     global execution_info,manager, task_mul
     execution_info = []
@@ -48,36 +48,107 @@ def prepare_global_info():
     task_mul = manager.dict()
 
 
-def get_exec_profile_data():
-    """Collect the execution profile from the home execution profiler's MongoDB and store it in text file.
+def update_exec_profile_file():
+    """Update the execution profile from the home execution profiler's MongoDB and store it in text file.
     """
-    print("Starting execution profile collection thread")
-    try:
-        client_mongo = MongoClient('mongodb://'+exec_home_ip+':'+str(MONGO_SVC_PORT)+'/')
-        db = client_mongo.execution_profiler
-        conn = True
-    except:
-        print('Error connection to mongoDB')
-    
-    print(db)
-    while True:
+    print('Update execution profile information in execution.txt')
+    print(exec_home_ip)
+    print(MONGO_SVC)
+    print(num_nodes)
+
+
+    num_profilers = 0
+    conn = False
+    while not conn:
         try:
-            logging =db[self_name].find()
+            client_mongo = MongoClient('mongodb://'+exec_home_ip+':'+str(MONGO_SVC)+'/')
+            db = client_mongo.execution_profiler
+            conn = True
+        except:
+            print('Error connection')
+            time.sleep(60)
+
+    print(db)
+    while num_profilers < num_nodes:
+        try:
+            collection = db.collection_names(include_system_collections=False)
+            num_profilers = len(collection)
+            print('--- Number of loaded collection: '+str(num_profilers))
         except Exception as e:
             print('--- Execution profiler info not yet loaded into MongoDB!')
             time.sleep(60)
 
-    for record in logging:
-        #  Task, Execution Time, Output size
-        info_to_csv=[col,record['Task'],record['Duration [sec]'],str(record['Output File [Kbit]'])]
-        execution_info.append(info_to_csv)
-
+    #print(collection)
+    for col in collection:
+        print('--- Check execution profiler ID : '+ col)
+        logging =db[col].find()
+        for record in logging:
+            # Node ID, Task, Execution Time, Output size
+            info_to_csv=[col,record['Task'],record['Duration [sec]'],str(record['Output File [Kbit]'])]
+            execution_info.append(info_to_csv)
     print('Execution information has already been provided')
-    #print(execution_info)
+    # print(execution_info)
     with open('execution_log.txt','w') as f:
         writer = csv.writer(f, quoting=csv.QUOTE_ALL)
         writer.writerows(execution_info)
+    return
 
+def get_taskmap():
+    """Get the task map from ``config.json`` and ``dag.txt`` files.
+    
+    Returns:
+        - dict: tasks - DAG dictionary
+        - list: task_order - (DAG) task list in the order of execution
+        - list: super_tasks 
+        - list: non_tasks - tasks not belong to DAG
+    """
+    configs = json.load(open('centralized_scheduler/config.json'))
+    task_map = configs['taskname_map']
+    execution_map = configs['exec_profiler']
+    tasks_info = open('centralized_scheduler/dag.txt', "r")
+
+    task_order = []#create the  (DAG) task list in the order of execution
+    super_tasks = []
+    tasks = {} #create DAG dictionary
+    count = 0
+    for line in tasks_info:
+        if count == 0:
+            count += 1
+            continue
+
+        data = line.strip().split(" ")
+        if task_map[data[0]][1] == True and execution_map[data[0]] == False:
+            if data[0] not in super_tasks:
+                super_tasks.append(data[0])
+        if task_map[data[0]][1] == False:
+            continue
+
+        tasks.setdefault(data[0], [])
+        if data[0] not in task_order:
+            task_order.append(data[0])
+        for i in range(3, len(data)):
+            if  data[i] != 'home' and task_map[data[i]][1] == True :
+                tasks[data[0]].append(data[i])
+    print("tasks: ", tasks)
+    print("task order", task_order) #task_list
+    print("super tasks", super_tasks)
+    return tasks, task_order, super_tasks
+
+def get_updated_exec_data():
+    with open('execution_log.txt','r') as f:
+        reader = csv.reader(f)
+        execution = list(reader)
+    # fix non-DAG tasks (temporary approach)
+    execution_info = []
+    for row in execution:
+        if row[0]!='home':
+            execution_info.append(row)
+        else:
+            print(row)
+            if row[1] in super_tasks:
+                for node in node_list:
+                    execution_info.append([node,row[1],row[2],row[3]]) # to copy the home profiler data for the non dag task for each processor.
+    print(execution_info)
 
 def get_updated_network_profile_data(profiler_ip, MONGO_SVC_PORT, network_map):
     """Collect the network profile information from local MONGODB database
@@ -89,6 +160,7 @@ def get_updated_network_profile_data(profiler_ip, MONGO_SVC_PORT, network_map):
     """
     print("Collect network profile data")   
     network_info = []
+
     try:
         client_mongo = MongoClient('mongodb://'+self_ip+':'+MONGO_SVC_PORT+'/')
         db = client_mongo.droplet_network_profiler
@@ -193,8 +265,7 @@ def main():
 
     print('------------------------------------------------------------')
     print("\n Read execution profiler information : \n")
-    _thread.start_new_thread(get_exec_profile_data, (exec_home_ip, MONGO_SVC,num_nodes))
-
+    _thread.start_new_thread(update_exec_profile_file,())
     
 
 if __name__ == '__main__':
