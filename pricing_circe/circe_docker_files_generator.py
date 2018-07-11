@@ -65,7 +65,7 @@ ADD {app_file}/configuration.txt /configuration.txt
 ADD nodes.txt /nodes.txt
 ADD jupiter_config.ini /jupiter_config.ini
 
-ADD pricing_circe/pricing_coordinator.py /centralized_scheduler/pricing_coordinator.py
+ADD pricing_circe/monitor.py /centralized_scheduler/monitor.py
 ADD pricing_circe/start_home.sh /start.sh
 RUN chmod +x /start.sh
 RUN chmod +x /central_mongod

@@ -42,10 +42,11 @@ def prepare_global_info():
     network_map = dict(zip(node_IP, node_list))
     num_nodes = len(profiler_ip[0])
 
-    global execution_info,manager, task_mul
+    global execution_info,manager, task_mul, count_dict, network_info, resource_info
     execution_info = []
     manager = Manager()
     task_mul = manager.dict()
+    count_dict = manager.dict()
 
 
 def update_exec_profile_file():
@@ -54,11 +55,10 @@ def update_exec_profile_file():
     print('Update execution profile information in execution.txt')
     print(exec_home_ip)
     print(MONGO_SVC)
-    print(num_nodes)
-
 
     num_profilers = 0
     conn = False
+    available_data = False
     while not conn:
         try:
             client_mongo = MongoClient('mongodb://'+exec_home_ip+':'+str(MONGO_SVC)+'/')
@@ -68,24 +68,19 @@ def update_exec_profile_file():
             print('Error connection')
             time.sleep(60)
 
-    print(db)
-    while num_profilers < num_nodes:
+    while not available_data:
         try:
-            collection = db.collection_names(include_system_collections=False)
-            num_profilers = len(collection)
-            print('--- Number of loaded collection: '+str(num_profilers))
-        except Exception as e:
-            print('--- Execution profiler info not yet loaded into MongoDB!')
+            logging =db[self_name].find()
+            available_data = True
+        except:
+            print('Execution information for the current node is not ready!!!')
             time.sleep(60)
+    print('--- Check execution profiler ID : '+ self_name)
 
-    #print(collection)
-    for col in collection:
-        print('--- Check execution profiler ID : '+ col)
-        logging =db[col].find()
-        for record in logging:
-            # Node ID, Task, Execution Time, Output size
-            info_to_csv=[col,record['Task'],record['Duration [sec]'],str(record['Output File [Kbit]'])]
-            execution_info.append(info_to_csv)
+    for record in logging:
+        # Node ID, Task, Execution Time, Output size
+        info_to_csv=[record['Task'],record['Duration [sec]'],str(record['Output File [Kbit]'])]
+        execution_info.append(info_to_csv)
     print('Execution information has already been provided')
     # print(execution_info)
     with open('execution_log.txt','w') as f:
@@ -211,7 +206,15 @@ def get_updated_resource_profile_data():
         print("Resource request failed. Will try again, details: " + str(e))
     
     
-
+def get_task_queue_status():
+    """Return task queue
+    
+    Returns:
+        dict: task queue
+    """
+    print('Current task queue size')
+    print(len(task_mul))
+    return task_mul
 
 
 def pricing_calculate(file_name, task_name):
@@ -224,6 +227,24 @@ def pricing_calculate(file_name, task_name):
     Returns:
         float: calculated price
     """
+    price = -1
+
+    """
+    Input information:
+        - Task queue: task_mul
+        - Resource information: resource_info
+        - Network information: network_info
+        - Execution information: execution_info
+    """
+    try:
+        task_mul = get_task_queue_status()
+        resource_info = get_updated_resource_profile_data()
+        network_info = get_updated_network_profile_data()
+        execution_info = get_updated_exec_data()
+    except:
+        print('Error reading input information to calculate the price')
+
+
     return price
 
 def receive_price_request(file_name, task_name):
@@ -266,6 +287,8 @@ def main():
     print('------------------------------------------------------------')
     print("\n Read execution profiler information : \n")
     _thread.start_new_thread(update_exec_profile_file,())
+
+    
     
 
 if __name__ == '__main__':

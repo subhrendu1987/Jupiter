@@ -212,7 +212,7 @@ spec:
           value: {all_node}
         - name: ALL_NODES_IPS
           value: {all_node_ips}
-        - name: SELF_NAME
+        - name: NODE_NAME
           value: {name}
         - name: SELF_IP
           value: {self_ip}

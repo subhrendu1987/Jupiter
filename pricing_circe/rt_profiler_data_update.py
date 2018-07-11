@@ -36,7 +36,7 @@ def main():
     retry        = 1
 
     dir_remote        = '/runtime'
-    node_name         = os.environ['SELF_NAME']
+    node_name         = os.environ['NODE_NAME']
     local_input_path  = '/centralized_scheduler/runtime/droplet_runtime_input_' + node_name
     local_output_path = '/centralized_scheduler/runtime/droplet_runtime_output_' + node_name
 

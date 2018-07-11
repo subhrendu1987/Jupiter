@@ -29,6 +29,49 @@ import urllib.request
 from urllib import parse
 import configparser
 from multiprocessing import Process, Manager
+from flask import Flask, request
+
+
+
+app = Flask(__name__)
+
+def prepare_global():
+    """
+    Prepare global information
+    """
+    global task_price_summary
+    task_price_summary = []
+
+def issue_price_request(file_name, file_size, task_name):
+    """Issue pricing request to every computing node
+    
+    Args:
+        file_name (str): Incoming file name
+        task_name (TYPE): Incoming task name
+    """
+
+def receive_updated_price():
+    """Receive price from every computing node
+    """
+app.add_url_rule('/receive_updated_price', 'receive_updated_price', receive_updated_price)
+
+def choose_exec_node():
+    """Return the node with the best price
+    """
+    return chosen_node
+
+
+def setup_exec_node(chosen_node,file_name,task_name):
+    """Setup prepared for the chosen computing node, transfer input files
+    
+    Args:
+        chosen_node (TYPE): node having best price
+        file_name (str): Incoming file name
+        task_name (str): Incoming task name
+    """
+def retrieve_results():
+    """Retrieve results from computing node
+    """
 
 def send_monitor_data(msg):
     """
@@ -405,6 +448,9 @@ def main():
 
     all_nodes = os.environ["ALL_NODES"].split(":")
     all_nodes_ips = os.environ["ALL_NODES_IPS"].split(":")
+
+    print('Task map------------------------------')
+    print(taskmap)
 
     if taskmap[1] == True:
         #queue_mul=multiprocessing.Queue()
