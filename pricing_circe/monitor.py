@@ -35,6 +35,30 @@ from flask import Flask, request
 
 app = Flask(__name__)
 
+def convert_bytes(num):
+    """Convert bytes to Kbit as required by HEFT
+    
+    Args:
+        num (int): The number of bytes
+    
+    Returns:
+        float: file size in Kbits
+    """
+    return num*0.008
+
+def file_size(file_path):
+    """Return the file size in bytes
+    
+    Args:
+        file_path (str): The file path
+    
+    Returns:
+        float: file size in bytes
+    """
+    if os.path.isfile(file_path):
+        file_info = os.stat(file_path)
+        return convert_bytes(file_info.st_size)
+
 def prepare_global():
     """
     Prepare global information
@@ -42,13 +66,36 @@ def prepare_global():
     global task_price_summary
     task_price_summary = []
 
-def issue_price_request(file_name, file_size, task_name):
+def issue_price_request(dest_node_host_port,file_name, file_size):
     """Issue pricing request to every computing node
     
     Args:
-        file_name (str): Incoming file name
-        task_name (TYPE): Incoming task name
+        dest_node_host_port (str): destination node and Flask port
+        file_name (str): incoming file name
+        file_size (int): size of incoming file
+    
+    Returns:
+        str: the message if successful, "not ok" otherwise.
+    
+    Raises:
+        Exception: if sending message to flask server on home is failed
     """
+    try:
+
+        print("Sending pricing request :"+ dest_node_host_port)
+        url = "http://" + dest_node_host_port + "/receive_price_request"
+        params = {'file_name':file_name ,'file_size':file_size, "task_name": taskname}
+        params = parse.urlencode(params)
+        req = urllib.request.Request(url='%s%s%s' % (url, '?', params))
+        res = urllib.request.urlopen(req)
+        res = res.read()
+        res = res.decode('utf-8')
+    except Exception as e:
+        print("Sending message to flask server on destination node FAILED!!!")
+        print(e)
+        return "not ok"
+    return res
+
 
 def receive_updated_price():
     """Receive price from every computing node
@@ -171,24 +218,12 @@ class Handler1(FileSystemEventHandler):
              
             print("Received file as output - %s." % event.src_path)
 
-            #Runtime profiler (finished_time)
-            
-            """
-                Save the time when a output file is available. This is taken as the end time of the task.
-                The output time is stored in the file central_scheduler/runtime/droplet_runtime_output_(%node name)
-            """
-            execution_end_time = datetime.datetime.utcnow()
-            pathrun = '/centralized_scheduler/runtime/'
-            runtime_file = os.path.join(pathrun,'droplet_runtime_output_' + node_name)
             new_file = os.path.split(event.src_path)[-1]
 
             if '_' in new_file:
                 temp_name = new_file.split('_')[0]
             else:
                 temp_name = new_file.split('.')[0]
-            with open(runtime_file, 'a') as f:
-                line = 'created_output, %s, %s, %s, %s\n' % (node_name, taskname, temp_name, execution_end_time)
-                f.write(line)
             
 
             global files_out
@@ -203,14 +238,12 @@ class Handler1(FileSystemEventHandler):
                 IPaddr = sys.argv[4]
                 user = sys.argv[5]
                 password=sys.argv[6]
-                #port=int(sys.argv[7])
                 ssh = paramiko.SSHClient()
                 ssh.set_missing_host_key_policy(paramiko.AutoAddPolicy())
 
                 #Keep retrying in case the containers are still building/booting up on
                 #the child nodes.
                 retry = 0
-                # num_retries = 30
                 while retry < num_retries:
                     try:
                         ssh.connect(IPaddr, username=user, password=password, port=ssh_port)
@@ -239,7 +272,6 @@ class Handler1(FileSystemEventHandler):
                     #Keep retrying in case the containers are still building/booting up on
                     #the child nodes.
                     retry = 0
-                    # num_retries = 30
                     while retry < num_retries:
                         try:
                             ssh.connect(IPaddr, username=user, password=password, port=ssh_port)
@@ -275,7 +307,6 @@ class Handler1(FileSystemEventHandler):
                         #Keep retrying in case the containers are still building/booting up on
                         #the child nodes.
                         retry = 0
-                        # num_retries = 30
                         while retry < num_retries:
                             try:
                                 ssh.connect(IPaddr, username=user, password=password, port=ssh_port)
@@ -306,7 +337,7 @@ class Watcher(multiprocessing.Process):
     def run(self):
         """
             Continuously watching the ``INPUT`` folder.
-            When file in the input folder is received, based on the DAG info imported previously, it either waits for more input files, or  perform the current task on the current node.
+            When file in the input folder is received, based on the DAG info imported previously, it either waits for more input files, or issue pricing request to all the computing nodes in the system.
         """
         
         event_handler = Handler()
@@ -331,44 +362,18 @@ class Handler(FileSystemEventHandler):
         elif event.event_type == 'created':
 
             print("Received file as input - %s." % event.src_path)
-            new_file = os.path.split(event.src_path)[-1]
 
-            #Runtime profiler (created_time)
-            
-            if platform.system() == 'Windows':
-                print(os.path.getctime(event.src_path))
-            else:
-                print(event.src_path)
-                stat = os.stat(event.src_path)
-                try:
-                    print(stat.st_birthtime)
-                except AttributeError:
-                    created_time=datetime.datetime.fromtimestamp(stat.st_mtime)
-                    print(created_time)
-
-            """
-                Save the time when an input file is available. This is taken as the start time of the task.
-                The output time is stored in the file central_scheduler/runtime/droplet_runtime_input_(%node name)
-            """
-            execution_start_time = datetime.datetime.utcnow()
-            pathrun = '/centralized_scheduler/runtime/'
-            runtime_file = os.path.join(pathrun,'droplet_runtime_input_' + node_name)
             new_file = os.path.split(event.src_path)[-1]
             if '_' in new_file:
                 temp_name = new_file.split('_')[0]
             else:
                 temp_name = new_file.split('.')[0]
 
-            with open(runtime_file, 'a') as f:
-                line = 'created_input, %s, %s, %s, %s\n' %(node_name, taskname, temp_name, execution_start_time)
-                f.write(line)
-
             
             ts = time.time()
             """
                 Save the time the input file enters the queue
             """
-            # filename = new_file
             
             flag1 = sys.argv[1]
             
@@ -381,7 +386,7 @@ class Handler(FileSystemEventHandler):
                 task_mul[temp_name] = task_mul[temp_name] + [new_file]
                 count_dict[temp_name]=count_dict[temp_name]-1
             print(task_mul[temp_name])
-            # global filenames
+            
 
             if count_dict[temp_name] == 0: # enough input files
                 filename = task_mul[temp_name]
@@ -389,19 +394,27 @@ class Handler(FileSystemEventHandler):
                     filenames = filename[0]
                 else:
                     filenames = filename    
-                print(filename)
-                print(type(filename))
-                ts = time.time()
-                runtime_info = 'rt_exec '+ temp_name+ ' '+str(ts)
-                send_runtime_profile(runtime_info)
-                input_path = os.path.split(event.src_path)[0]
-                output_path = os.path.join(os.path.split(input_path)[0],'output')
-                dag_task = multiprocessing.Process(target=taskmodule.task, args=(filenames, input_path, output_path))
-                dag_task.start()
-                dag_task.join()
-                ts = time.time()
-                runtime_info = 'rt_finish '+ temp_name+ ' '+str(ts)
-                send_runtime_profile(runtime_info)
+               
+                # When receive an input file, issue pricing request instead of performing the task
+                print(all_nodes)
+                print(all_nodes_ips)
+                for dest_node_host_port in dest_node_host_port_list:
+                    issue_price_request(dest_node_host_port,filenames, file_size(event.src_path))
+
+                # ts = time.time()
+                # runtime_info = 'rt_exec '+ temp_name+ ' '+str(ts)
+                # send_runtime_profile(runtime_info)
+                # input_path = os.path.split(event.src_path)[0]
+                # output_path = os.path.join(os.path.split(input_path)[0],'output')
+
+                
+
+                # dag_task = multiprocessing.Process(target=taskmodule.task, args=(filenames, input_path, output_path))
+                # dag_task.start()
+                # dag_task.join()
+                # ts = time.time()
+                # runtime_info = 'rt_finish '+ temp_name+ ' '+str(ts)
+                # send_runtime_profile(runtime_info)
 
 
 def main():
@@ -449,8 +462,9 @@ def main():
     all_nodes = os.environ["ALL_NODES"].split(":")
     all_nodes_ips = os.environ["ALL_NODES_IPS"].split(":")
 
-    print('Task map------------------------------')
-    print(taskmap)
+    global dest_node_host_port_list
+    dest_node_host_port_list = [ip + ":" + str(FLASK_SVC) for ip in all_nodes_ips]
+
 
     if taskmap[1] == True:
         #queue_mul=multiprocessing.Queue()

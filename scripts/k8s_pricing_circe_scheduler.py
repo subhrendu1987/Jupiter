@@ -225,6 +225,10 @@ def k8s_pricing_circe_scheduler(dag_info , temp_info, profiler_ips, execution_ip
     
     all_node_ips = ':'.join(service_ips.values())
     all_node = ':'.join(service_ips.keys())
+
+    print(all_node)
+    print(all_node_ips)
+
     print('-------- Create computing nodes service')
 
     """
@@ -253,9 +257,14 @@ def k8s_pricing_circe_scheduler(dag_info , temp_info, profiler_ips, execution_ip
             all_profiler_ips = all_profiler_ips + ':' + profiler_ips[node]
 
     all_computing_ips = ':'.join(computing_service_ips.values())
-    all_computing = ':'.join(computing_service_ips.keys())
-    print(all_computing)
+    all_computing_nodes = ':'.join(computing_service_ips.keys())
+    print(all_computing_nodes)
+    print(all_computing_ips)
+    print('==============')
+    print(profiler_ips)
+    print(all_profiler_ips)
     
+
 
     """
     Start circe
@@ -281,8 +290,10 @@ def k8s_pricing_circe_scheduler(dag_info , temp_info, profiler_ips, execution_ip
             """
             print(execution_ips)
             dep = write_circe_computing_specs(name = i, label =  i, image = jupiter_config.WORKER_COMPUTING_IMAGE,
-                                             host = nodes[i][0], all_node = all_computing,
-                                             all_node_ips = all_computing_ips,
+                                             host = nodes[i][0], all_node = all_node,
+                                             all_node_ips = all_node_ips,
+                                             all_computing_node = all_computing_nodes,
+                                             all_computing_ips = all_computing_ips,
                                              self_ip = computing_service_ips[i],
                                              profiler_ip = profiler_ips[i],
                                              all_profiler_ips = all_profiler_ips,

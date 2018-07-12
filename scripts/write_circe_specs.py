@@ -117,6 +117,7 @@ template_worker = """
             ports:
             - containerPort: {ssh_port}
             - containerPort: 80
+            - containerPort: {flask_port}
             env:
             - name: FLAG
               value: '{flag}'
@@ -207,11 +208,17 @@ spec:
         image: {image}
         ports:
         - containerPort: {flask_port}
+        - containerPort: {ssh_port}
+        - containerPort: 80
         env:
         - name: ALL_NODES
           value: {all_node}
         - name: ALL_NODES_IPS
           value: {all_node_ips}
+        - name: ALL_COMPUTING_NODES
+          value: {all_computing_node}
+        - name: ALL_COMPUTING_IPS
+          value: {all_computing_ips}
         - name: NODE_NAME
           value: {name}
         - name: SELF_IP
@@ -254,6 +261,7 @@ def write_circe_computing_specs(**kwargs):
     jupiter_config.set_globals()
     
     specific_yaml = template_computing.format(flask_port = jupiter_config.FLASK_DOCKER,
+                                              ssh_port = jupiter_config.SSH_DOCKER,
                                     **kwargs)
     dep = yaml.load(specific_yaml)
     return dep

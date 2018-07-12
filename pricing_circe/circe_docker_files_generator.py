@@ -41,10 +41,9 @@ RUN echo "export VISIBLE=now" >> /etc/profile
 RUN mkdir -p /mongodb/data
 RUN mkdir -p /mongodb/log
 
-# Create the input, output, and runtime profiler directories
+# Create the input, output
 RUN mkdir -p /input
 RUN mkdir -p /output
-RUN mkdir -p /runtime
 
 # Add input files
 COPY  {app_file}/sample_input /sample_input
@@ -52,7 +51,6 @@ COPY  {app_file}/sample_input2 /sample_input2
 
 # Add the mongodb scripts
 ADD pricing_circe/runtime_profiler_mongodb /central_mongod
-ADD pricing_circe/rt_profiler_update_mongo.py /run_update.py
 
 ADD pricing_circe/readconfig.py /readconfig.py
 ADD pricing_circe/scheduler.py /scheduler.py
@@ -116,7 +114,6 @@ RUN echo "export VISIBLE=now" >> /etc/profile
 
 RUN mkdir -p /centralized_scheduler/input
 RUN mkdir -p /centralized_scheduler/output
-RUN mkdir -p /centralized_scheduler/runtime
 ADD pricing_circe/monitor.py /centralized_scheduler/monitor.py
 RUN mkdir -p /home/darpa/apps/data
 
@@ -177,7 +174,6 @@ RUN echo "export VISIBLE=now" >> /etc/profile
 
 RUN mkdir -p /centralized_scheduler/input
 RUN mkdir -p /centralized_scheduler/output
-RUN mkdir -p /centralized_scheduler/runtime
 RUN mkdir -p /home/darpa/apps/data
 
 ADD pricing_circe/rt_profiler_data_update.py  /centralized_scheduler/rt_profiler_data_update.py

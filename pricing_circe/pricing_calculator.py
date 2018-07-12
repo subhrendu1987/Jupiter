@@ -35,7 +35,7 @@ def prepare_global_info():
     profiler_ip = os.environ['ALL_PROFILERS'].split(' ')
     profiler_ip = [info.split(":") for info in profiler_ip]
     exec_home_ip = os.environ['EXECUTION_HOME_IP']
-    self_name = os.environ['SELF_NAME']
+    self_name = os.environ['NODE_NAME']
     self_ip = os.environ['SELF_IP']
     node_list = [info[0] for info in profiler_ip]
     node_IP = [info[1] for info in profiler_ip]
@@ -247,14 +247,24 @@ def pricing_calculate(file_name, task_name):
 
     return price
 
-def receive_price_request(file_name, task_name):
+def receive_price_request(file_name, file_size, task_name):
     """Receive price request from pricing calculator
     
     Args:
         file_name (str): incoming file name
         task_name (str): incoming task name
     """
-
+    try:
+        task_name = request.args.get('task_name')
+        file_size = request.args.get('file_size')
+        file_name = request.args.get('file_name')
+        print("Received pricing request message:", task_name, file_size,file_name)
+    except Exception as e:
+        print("Bad reception or failed processing in Flask for pricing request")
+        print(e)
+        return "not ok"
+    return "ok"
+app.add_url_rule('/receive_price_request', 'receive_price_request', receive_price_request)
 
 def execute_task(file_name, task_name):
     """Execute the task given the input file

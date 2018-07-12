@@ -10,6 +10,13 @@ import time
 import glob
 
 
+def evaluate_test():
+    time.sleep(120)
+    num = 0
+    src = '/sample_input/1botnet.ipsum'
+    dest = '/input/1botnet.ipsum'
+    shutil.copyfile(src,dest)
+
 def evaluate_random():
     """
     Copy files from folder ``sample_input`` to folder ``input`` at random intervals for evaluation 
@@ -104,8 +111,9 @@ def check_status_circe():
     return result    
 
 if __name__ == '__main__':
-    print('Sequential evaluation')
-    evaluate_sequential(900)
-    time.sleep(60)
-    print('Overlap evaluation')
-    evaluate_random()
+    evaluate_test()
+    # print('Sequential evaluation')
+    # evaluate_sequential(900)
+    # time.sleep(60)
+    # print('Overlap evaluation')
+    # evaluate_random()

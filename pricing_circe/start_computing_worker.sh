@@ -18,8 +18,6 @@ if [ ${#children[@]} -ne ${#children_ips[@]} ]; then
     echo "Something is wrong with the environment variables!"
 fi
 
-python3 -u centralized_scheduler/rt_profiler_data_update.py &
-
 # Run python with '-u' for unbuffered prints so the Kubernetes log system gets
 # all the print statements.
 python3 -u centralized_scheduler/pricing_calculator.py &
