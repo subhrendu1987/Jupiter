@@ -64,7 +64,7 @@ def prepare_global():
     Prepare global information
     """
     global task_price_summary
-    task_price_summary = []
+    task_price_summary = {}
 
 def issue_price_request(dest_node_host_port,file_name, file_size):
     """Issue pricing request to every computing node
@@ -84,7 +84,7 @@ def issue_price_request(dest_node_host_port,file_name, file_size):
 
         print("Sending pricing request :"+ dest_node_host_port)
         url = "http://" + dest_node_host_port + "/receive_price_request"
-        params = {'file_name':file_name ,'file_size':file_size, "task_name": taskname}
+        params = {'file_name':file_name ,'file_size':file_size, "task_name": taskname,"task_ip":self_ip,"node_name": node_id}
         params = parse.urlencode(params)
         req = urllib.request.Request(url='%s%s%s' % (url, '?', params))
         res = urllib.request.urlopen(req)
@@ -96,28 +96,59 @@ def issue_price_request(dest_node_host_port,file_name, file_size):
         return "not ok"
     return res
 
-
-def receive_updated_price():
-    """Receive price from every computing node
+def receive_price_info():
     """
-app.add_url_rule('/receive_updated_price', 'receive_updated_price', receive_updated_price)
-
-def choose_exec_node():
-    """Return the node with the best price
+        Receive price from every computing node, choose the most suitable computing node 
     """
-    return chosen_node
+    try:
+        file_name = request.args.get('file_name')
+        node_name = request.args.get('node_name')
+        node_ip = request.args.get('node_ip')
+        price = request.args.get('price')
+        print("Received pricing info: ", file_name,node_name, node_ip,price)
+        if file_name not in task_price_summary:
+            task_price_summary[file_name] = [node_name,price]
+        else:
+            task_price_summary[file_name].append([node_name,price])
 
+        if len(task_price_summary) == num_computing_nodes:
+            print('Getting enough pricing announcement from all the computing nodes')
+            print(task_price_summary)
+    except Exception as e:
+        print("Bad reception or failed processing in Flask for pricing announcement: "+ e) 
+        return "not ok"  
+    return task_price_summary 
+app.add_url_rule('/receive_price_info', 'receive_price_info', receive_price_info)
 
-def setup_exec_node(chosen_node,file_name,task_name):
+def transfer_data_scp(IP,user,pword,source, destination):
+        """Transfer data using SCP
+        
+        Args:
+            IP (str): destination IP address
+            user (str): username
+            pword (str): password
+            source (str): source file path
+            destination (str): destination file path
+        """
+        retry = 0
+        while retry < num_retries:
+            try:
+                cmd = "sshpass -p %s scp -P %s -o StrictHostKeyChecking=no -r %s %s@%s:%s" % (pword, ssh_port, source, user, IP, destination)
+                os.system(cmd)
+                print('data transfer complete\n')
+                break
+            except:
+                print('Task controller: SSH Connection refused or File transfer failed, will retry in 2 seconds')
+                time.sleep(2)
+            retry += 1
+
+def setup_exec_node(chosen_node_IP,file_name):
     """Setup prepared for the chosen computing node, transfer input files
     
     Args:
         chosen_node (TYPE): node having best price
         file_name (str): Incoming file name
         task_name (str): Incoming task name
-    """
-def retrieve_results():
-    """Retrieve results from computing node
     """
 
 def send_monitor_data(msg):
@@ -176,6 +207,16 @@ def send_runtime_profile(msg):
         return "not ok"
     return res
 
+class MonitorRecv(multiprocessing.Process):
+    def __init__(self):
+        multiprocessing.Process.__init__(self)
+
+    def run(self):
+        """
+        Start Flask server
+        """
+        print("Flask server started")
+        app.run(host='0.0.0.0', port=FLASK_DOCKER)
 
 
 #for OUTPUT folder 
@@ -396,11 +437,28 @@ class Handler(FileSystemEventHandler):
                     filenames = filename    
                
                 # When receive an input file, issue pricing request instead of performing the task
-                print(all_nodes)
-                print(all_nodes_ips)
-                for dest_node_host_port in dest_node_host_port_list:
-                    issue_price_request(dest_node_host_port,filenames, file_size(event.src_path))
+                
+                print(filename)
+                print(filenames)
+                filepath = os.path.split(event.src_path)[0]
+                print(filepath)
+                filepaths = [filepath+'/'+fname for fname in filename]
+                print(filepaths)
+                output_data = [file_size(x) for x in filepaths]
+                sum_output_data = sum(output_data)
+                print(dest_node_host_port_list)
 
+                for dest_node_host_port in dest_node_host_port_list:
+                    print(dest_node_host_port )
+                    issue_price_request(dest_node_host_port,filenames, file_size(event.src_path))
+                
+                # just for testing 
+                # source = event.src_path
+                # destination = event.src_path+"#"+taskname
+                # for ip in all_computing_ips:
+                #     # testing
+                #     transfer_data_scp(ip,username,password,source, destination)
+                
                 # ts = time.time()
                 # runtime_info = 'rt_exec '+ temp_name+ ' '+str(ts)
                 # send_runtime_profile(runtime_info)
@@ -433,17 +491,21 @@ def main():
     config = configparser.ConfigParser()
     config.read(INI_PATH)
 
-    global FLASK_SVC, MONGO_PORT, username,password,ssh_port, num_retries, task_mul, count_dict
+    global FLASK_SVC, FLASK_DOCKER, MONGO_PORT, username,password,ssh_port, num_retries, task_mul, count_dict,self_ip
 
+    FLASK_DOCKER   = int(config['PORT']['FLASK_DOCKER'])
     FLASK_SVC   = int(config['PORT']['FLASK_SVC'])
     MONGO_PORT  = int(config['PORT']['MONGO_DOCKER'])
     username    = config['AUTH']['USERNAME']
     password    = config['AUTH']['PASSWORD']
     ssh_port    = int(config['PORT']['SSH_SVC'])
     num_retries = int(config['OTHER']['SSH_RETRY_NUM'])
+    self_ip     = os.environ['OWN_IP']
 
 
-    global taskmap, taskname, taskmodule, filenames,files_out, node_name, home_node_host_port, all_nodes, all_nodes_ips
+    global taskmap, taskname, taskmodule, filenames,files_out, home_node_host_port
+    global all_nodes, all_nodes_ips, node_id, node_name
+    global all_computing_nodes,all_computing_ips, num_computing_nodes
 
     configs = json.load(open('/centralized_scheduler/config.json'))
     taskmap = configs["taskname_map"][sys.argv[len(sys.argv)-1]]
@@ -457,14 +519,18 @@ def main():
     filenames=[]
     files_out=[]
     node_name = os.environ['NODE_NAME']
+    node_id = os.environ['NODE_ID']
     home_node_host_port = os.environ['HOME_NODE'] + ":" + str(FLASK_SVC)
 
-    all_nodes = os.environ["ALL_NODES"].split(":")
-    all_nodes_ips = os.environ["ALL_NODES_IPS"].split(":")
+    all_computing_nodes = os.environ["ALL_COMPUTING_NODES"].split(":")
+    all_computing_ips = os.environ["ALL_COMPUTING_IPS"].split(":")
+    num_computing_nodes = len(all_computing_nodes)
 
     global dest_node_host_port_list
-    dest_node_host_port_list = [ip + ":" + str(FLASK_SVC) for ip in all_nodes_ips]
+    dest_node_host_port_list = [ip + ":" + str(FLASK_SVC) for ip in all_computing_ips]
 
+    web_server = MonitorRecv()
+    web_server.start()
 
     if taskmap[1] == True:
         #queue_mul=multiprocessing.Queue()

@@ -11,7 +11,7 @@ import glob
 
 
 def evaluate_test():
-    time.sleep(120)
+    time.sleep(90)
     num = 0
     src = '/sample_input/1botnet.ipsum'
     dest = '/input/1botnet.ipsum'

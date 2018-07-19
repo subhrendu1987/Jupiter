@@ -216,7 +216,7 @@ spec:
         - name: ALL_NODES_IPS
           value: {all_node_ips}
         - name: ALL_COMPUTING_NODES
-          value: {all_computing_node}
+          value: {all_computing_nodes}
         - name: ALL_COMPUTING_IPS
           value: {all_computing_ips}
         - name: NODE_NAME
@@ -227,6 +227,8 @@ spec:
           value: {profiler_ip}
         - name: ALL_PROFILERS
           value: {all_profiler_ips}
+        - name: ALL_PROFILERS_NODES
+          value: {all_profiler_nodes}
         - name: EXECUTION_HOME_IP
           value: {execution_home_ip} 
         - name: HOME_NODE
@@ -264,4 +266,102 @@ def write_circe_computing_specs(**kwargs):
                                               ssh_port = jupiter_config.SSH_DOCKER,
                                     **kwargs)
     dep = yaml.load(specific_yaml)
+    return dep
+
+template_controller = """
+    apiVersion: extensions/v1beta1
+    kind: Deployment    
+    metadata:
+      name: {name}
+      labels:
+        app: ssh
+        purpose: dag-demo
+    spec:
+      template:
+        metadata:
+          labels:
+            app: {name}
+        spec:
+          containers:
+          - name: {name}
+            imagePullPolicy: Always
+            image: {image}
+            ports:
+            - containerPort: {ssh_port}
+            - containerPort: 80
+            - containerPort: {flask_port}
+            env:
+            - name: FLAG
+              value: '{flag}'
+            - name: INPUTNUM
+              value: '{inputnum}'
+            - name: CHILD_NODES
+              value: {child}
+            - name: CHILD_NODES_IPS
+              value: {child_ips}
+            - name: TASK
+              value: {name}
+            - name: NODE_NAME
+              value: {node_name}
+            - name: NODE_ID
+              value: {node_id}
+            - name: HOME_NODE
+              value: {home_node_ip}
+            - name: OWN_IP
+              value: {own_ip}
+            - name: ALL_NODES
+              value: {all_node}
+            - name: ALL_NODES_IPS
+              value: {all_node_ips}
+            - name: ALL_COMPUTING_NODES
+              value: {all_computing_nodes}
+            - name: ALL_COMPUTING_IPS
+              value: {all_computing_ips}
+          nodeSelector:
+            kubernetes.io/hostname: {host}
+          restartPolicy: Always
+
+"""
+
+def write_circe_controller_specs(**kwargs):
+    """
+    This function genetares the deployment service description yaml for CIRCE
+     
+    In this case, call argument should be:
+    
+      -   app: {name}
+      -   image: {image}
+      -   containerPort: {ssh_port}
+      -   FLAG: {flag}
+      -   INPUTNUM: {inputnum}
+      -   CHILD_NODES: {child}
+      -   CHILD_NODES_IPS: {child_ips}
+      -   NODE_NAME: {node_name}
+      -   HOME_NODE: {home_node_ip}
+      -   OWN_IP: {own_ip}
+      -   ALL_NODES: {all_node}
+      -   ALL_NODES_IPS: {all_node_ips}
+      -   kubernetes.io/hostname: {host}
+    
+    Args:
+        ``**kwargs``: list of key value pair
+    
+    Returns:
+        dict: loaded configuration 
+    """
+
+    # insert your values
+
+    specific_yaml = template_controller.format(ssh_port = jupiter_config.SSH_DOCKER, 
+                                    flask_port = jupiter_config.FLASK_DOCKER,
+                                    mongo_port = jupiter_config.MONGO_DOCKER,
+                                    **kwargs)
+
+    dep = yaml.load(specific_yaml)
+    #dep = yaml.load(specific_yaml, Loader=yaml.BaseLoader)
+    
+    dep = add_app_specific_ports(dep)
+
+
+
     return dep

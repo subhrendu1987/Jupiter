@@ -87,17 +87,6 @@ def update_mongo(file_path):
             print('MongoDB error')
             print(e)    
 
-def convert_bytes(num):
-    """Convert bytes to Kbit as required by HEFT
-    
-    Args:
-        num (int): The number of bytes
-    
-    Returns:
-        float: file size in Kbits
-    """
-    return num*0.008
-
 def file_size(file_path):
     """Return the file size in bytes
     
@@ -109,7 +98,7 @@ def file_size(file_path):
     """
     if os.path.isfile(file_path):
         file_info = os.stat(file_path)
-        return convert_bytes(file_info.st_size)
+        return file_info.st_size * 0.008
 
 
 

@@ -21,7 +21,7 @@ RUN apt-get install -y openssh-server mongodb
 ADD pricing_circe/requirements.txt /requirements.txt
 RUN apt-get -y install build-essential libssl-dev libffi-dev python-dev
 RUN pip3 install --upgrade pip
-RUN apt-get install -y sshpass nano 
+RUN apt-get install -y sshpass nano curl
 
 # Taken from quynh's network profiler
 RUN pip install cryptography
@@ -92,6 +92,7 @@ RUN apt-get install -y vim
 RUN apt-get install g++ make openmpi-bin libopenmpi-dev -y
 RUN apt-get install sudo -y
 RUN apt-get install iproute2 -y
+RUN apt-get install curl -y
 
 ## Install TASK specific needs. The hadoop is a requirement for the network profiler application
 ##RUN wget http://supergsego.com/apache/hadoop/common/hadoop-2.8.1/hadoop-2.8.1.tar.gz -P ~/
@@ -114,10 +115,7 @@ RUN echo "export VISIBLE=now" >> /etc/profile
 
 RUN mkdir -p /centralized_scheduler/input
 RUN mkdir -p /centralized_scheduler/output
-ADD pricing_circe/monitor.py /centralized_scheduler/monitor.py
 RUN mkdir -p /home/darpa/apps/data
-
-ADD pricing_circe/rt_profiler_data_update.py  /centralized_scheduler/rt_profiler_data_update.py
 
 # IF YOU WANNA DEPLOY A DIFFERENT APPLICATION JUST CHANGE THIS LINE
 ADD {app_file}/scripts/ /centralized_scheduler/
@@ -127,6 +125,9 @@ ADD jupiter_config.py /jupiter_config.py
 
 ADD pricing_circe/pricing_coordinator.py /centralized_scheduler/pricing_coordinator.py
 ADD pricing_circe/start_worker.sh /start.sh
+
+ADD pricing_circe/monitor.py /centralized_scheduler/monitor.py
+
 RUN chmod +x /start.sh
 
 WORKDIR /
@@ -152,6 +153,7 @@ RUN apt-get install -y vim
 RUN apt-get install g++ make openmpi-bin libopenmpi-dev -y
 RUN apt-get install sudo -y
 RUN apt-get install iproute2 -y
+RUN apt-get install curl -y
 
 ## Install TASK specific needs. The hadoop is a requirement for the network profiler application
 ##RUN wget http://supergsego.com/apache/hadoop/common/hadoop-2.8.1/hadoop-2.8.1.tar.gz -P ~/
@@ -176,19 +178,19 @@ RUN mkdir -p /centralized_scheduler/input
 RUN mkdir -p /centralized_scheduler/output
 RUN mkdir -p /home/darpa/apps/data
 
-ADD pricing_circe/rt_profiler_data_update.py  /centralized_scheduler/rt_profiler_data_update.py
-
 # IF YOU WANNA DEPLOY A DIFFERENT APPLICATION JUST CHANGE THIS LINE
 ADD {app_file}/scripts/ /centralized_scheduler/
 
 ADD jupiter_config.ini /jupiter_config.ini
 ADD jupiter_config.py /jupiter_config.py
 
-ADD pricing_circe/pricing_calculator.py /centralized_scheduler/pricing_calculator.py
 ADD pricing_circe/start_computing_worker.sh /start.sh
 ADD scripts/keep_alive.py /centralized_scheduler/keep_alive.py
 ADD {app_file}/configuration.txt  /centralized_scheduler/dag.txt
 ADD {app_file}/scripts/config.json /centralized_scheduler/config.json
+
+ADD pricing_circe/pricing_calculator.py /centralized_scheduler/pricing_calculator.py
+
 RUN chmod +x /start.sh
 
 WORKDIR /

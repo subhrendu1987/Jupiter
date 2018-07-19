@@ -169,6 +169,7 @@ def k8s_pricing_circe_scheduler(dag_info , temp_info, profiler_ips, execution_ip
     service_ips = {}; #list of all service IPs including home and task controllers
     computing_service_ips = {}
     all_profiler_ips = ''
+    all_profiler_nodes = ''
 
     print('-------- First create the home node service')
     """
@@ -248,21 +249,22 @@ def k8s_pricing_circe_scheduler(dag_info , temp_info, profiler_ips, execution_ip
             print("Service created. status = '%s'" % str(ser_resp.status))
         
             try:
-                resp = api.read_namespaced_service(task, namespace)
+                resp = api.read_namespaced_service(node, namespace)
             except ApiException as e:
                 print("Exception Occurred")
 
             # print resp.spec.cluster_ip
             computing_service_ips[node] = resp.spec.cluster_ip
             all_profiler_ips = all_profiler_ips + ':' + profiler_ips[node]
+            all_profiler_nodes = all_profiler_nodes + ':' + node
 
     all_computing_ips = ':'.join(computing_service_ips.values())
     all_computing_nodes = ':'.join(computing_service_ips.keys())
+    all_profiler_ips = all_profiler_ips[1:]
+    all_profiler_nodes = all_profiler_nodes[1:]
     print(all_computing_nodes)
     print(all_computing_ips)
-    print('==============')
-    print(profiler_ips)
-    print(all_profiler_ips)
+    
     
 
 
@@ -292,11 +294,12 @@ def k8s_pricing_circe_scheduler(dag_info , temp_info, profiler_ips, execution_ip
             dep = write_circe_computing_specs(name = i, label =  i, image = jupiter_config.WORKER_COMPUTING_IMAGE,
                                              host = nodes[i][0], all_node = all_node,
                                              all_node_ips = all_node_ips,
-                                             all_computing_node = all_computing_nodes,
+                                             all_computing_nodes = all_computing_nodes,
                                              all_computing_ips = all_computing_ips,
                                              self_ip = computing_service_ips[i],
                                              profiler_ip = profiler_ips[i],
                                              all_profiler_ips = all_profiler_ips,
+                                             all_profiler_nodes = all_profiler_nodes,
                                              execution_home_ip = execution_ips['home'],
                                              home_node_ip = service_ips.get("home"))
             # # pprint(dep)
@@ -345,13 +348,20 @@ def k8s_pricing_circe_scheduler(dag_info , temp_info, profiler_ips, execution_ip
     
         
         #Generate the yaml description of the required deployment for each task
-        dep = write_circe_deployment_specs(flag = str(flag), inputnum = str(inputnum), name = task, node_name = hosts.get(task)[1],
+        
+        print('------------- Retrieve node ')
+        print(task)
+        print(dag_info[2][task])
+
+        dep = write_circe_controller_specs(flag = str(flag), inputnum = str(inputnum), name = task, node_name = hosts.get(task)[1],
             image = jupiter_config.WORKER_CONTROLLER_IMAGE, child = nexthosts, 
             child_ips = next_svc, host = hosts.get(task)[1], dir = '{}',
             home_node_ip = service_ips.get("home"),
-            own_ip = service_ips[key],
+            node_id = dag_info[2][task], own_ip = service_ips[key],
             all_node = all_node,
-            all_node_ips = all_node_ips)
+            all_node_ips = all_node_ips,
+            all_computing_nodes = all_computing_nodes,
+            all_computing_ips = all_computing_ips)
         pprint(dep)
         
 
