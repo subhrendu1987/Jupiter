@@ -59,13 +59,6 @@ def file_size(file_path):
         file_info = os.stat(file_path)
         return convert_bytes(file_info.st_size)
 
-def prepare_global():
-    """
-    Prepare global information
-    """
-    global task_price_summary
-    task_price_summary = {}
-
 def issue_price_request(dest_node_host_port,file_name, file_size):
     """Issue pricing request to every computing node
     
@@ -114,10 +107,12 @@ def receive_price_info():
         if len(task_price_summary) == num_computing_nodes:
             print('Getting enough pricing announcement from all the computing nodes')
             print(task_price_summary)
+            
     except Exception as e:
         print("Bad reception or failed processing in Flask for pricing announcement: "+ e) 
-        return "not ok"  
-    return task_price_summary 
+        return "not ok" 
+
+    return "ok"
 app.add_url_rule('/receive_price_info', 'receive_price_info', receive_price_info)
 
 def transfer_data_scp(IP,user,pword,source, destination):
@@ -528,6 +523,9 @@ def main():
 
     global dest_node_host_port_list
     dest_node_host_port_list = [ip + ":" + str(FLASK_SVC) for ip in all_computing_ips]
+
+    global task_price_summary
+    task_price_summary = {}
 
     web_server = MonitorRecv()
     web_server.start()

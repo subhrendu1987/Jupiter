@@ -266,7 +266,7 @@ def get_updated_resource_profile():
             r = requests.get("http://" + self_profiler_ip + ":" + str(FLASK_SVC) + "/all")
             result = r.json()
             if len(result) != 0:
-                resource_info=json.dumps(result)
+                resource_info=result
                 break
             time.sleep(60)
 
@@ -306,52 +306,47 @@ def pricing_calculate(file_name, task_name, task_ip,node_name,file_size):
         - Task queue: task_mul
         - Execution information: execution_info
     """
-    retry = 0
-    while retry < num_retries:
-        try:
-            print(' Retrieve all input information: ')
-            execution_info = get_updated_execution_profile()
-            resource_info = get_updated_resource_profile()
-            computing_net_info,controller_net_info = get_updated_network_profile(node_name)
-            print('--- Resource: ')
-            print(resource_info)
-            print('--- Network: ')
-            print(computing_net_info)
-            print(controller_net_info)
-            print('--- Execution: ')
-            print(execution_info)
-            print('----Task queue: ')
-            print(queue_mul)
 
-            print('----- Calculating price:')
-            print('--- Resource: ')
-            print(self_name)
-            print(resource_info[self_name])
-            print(resource_info[self_name]["memory"])
-            print(resource_info[self_name]["cpu"])
-            resource_cost = resource_info[self_name]["memory"] * w_memory +  resource_info[self_name]["cpu"] * w_cpu
-            print('--- Network: ')
-            computing_net_params = computing_net_info[task_name].split()
-            controller_net_params = controller_net_info[task_name].split()
-            print(computing_net_params)
-            print(controller_net_params)
-            print('--- Execution: ')
-            
-            print('----Task queue: ')
-            if len(queue_mul)==0:
-                queue_price = 0
-            else:
-                queue_dict = dict(queue_mul)
-                queue_task = [k for k,v in queue_dict.items() if v == False]
-                size_dict = dict(size_mul)
-                queue_size =  [size_dict[k] for k in queue_dict.keys()]
-                print(queue_task)
-                print(queue_size)
-            return queue_price
-        except:
-            print('Error reading input information to calculate the price')
-            time.sleep(2)
-            retry += 1
+    try:
+        print(' Retrieve all input information: ')
+        execution_info = get_updated_execution_profile()
+        resource_info = get_updated_resource_profile()
+        computing_net_info,controller_net_info = get_updated_network_profile(node_name)
+        print('--- Resource: ')
+        print(resource_info)
+        print('--- Network: ')
+        print(computing_net_info)
+        print(controller_net_info)
+        print('--- Execution: ')
+        print(execution_info)
+        print('----Task queue: ')
+        print(queue_mul)
+
+        print('----- Calculating price:')
+        print('--- Resource cost: ')
+        resource_cost = float(resource_info[self_name]["memory"]) * w_mem +  float(resource_info[self_name]["cpu"]) * w_cpu
+        print(resource_cost)
+        print('--- Network cost: ')
+        print(self_name)
+        computing_net_params = computing_net_info[node_name].split()
+        controller_net_params = controller_net_info[self_name].split()
+        computing_net_params = [float(x) for x in computing_net_params]
+        controller_net_params = [float(x) for x in controller_net_params]
+        
+        print('--- Queuing cost: ')
+        if len(queue_mul)==0:
+            queue_cost = 0
+        else:
+            queue_dict = dict(queue_mul)
+            queue_task = [k for k,v in queue_dict.items() if v == False]
+            size_dict = dict(size_mul)
+            queue_size =  [size_dict[k] for k in queue_dict.keys()]
+            print(queue_task)
+            print(queue_size)
+        return queue_price
+    except:
+        print('Error reading input information to calculate the price')
+        
     return -1
 
 def announce_price(task_controller_ip, file_name, price):
