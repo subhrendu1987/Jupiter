@@ -21,6 +21,7 @@ from flask import Flask, request
 from os import path
 import json
 import _thread
+import threading
 import csv
 from pymongo import MongoClient
 import pandas as pd
@@ -61,7 +62,7 @@ def k8s_read_dag(dag_info_file):
   dag_info.append(dag)
   return dag_info
 
-def file_size(file_path):
+def cal_file_size(file_path):
     """Return the file size in bytes
     
     Args:
@@ -110,9 +111,9 @@ def get_taskmap():
         for i in range(3, len(data)):
             if  data[i] != 'home' and task_map[data[i]][1] == True :
                 tasks[data[0]].append(data[i])
-    print("tasks: ", tasks)
-    print("task order", task_order) #task_list
-    print("super tasks", super_tasks)
+    # print("tasks: ", tasks)
+    # print("task order", task_order) #task_list
+    # print("super tasks", super_tasks)
     return tasks, task_order, super_tasks
 
 def prepare_global_info():
@@ -132,13 +133,14 @@ def prepare_global_info():
     ip_node_map = dict(zip(profiler_ip[0], profiler_nodes[0]))
     node_ip_map = dict(zip(profiler_nodes[0], profiler_ip[0]))
 
-    global manager,task_mul, count_mul, queue_mul, size_mul
+    global manager,task_mul, count_mul, queue_mul, size_mul,task_to_ip
 
     manager = Manager()
     task_mul = manager.dict() # list of incoming tasks and files
     count_mul = manager.dict() # number of input files required for each task
     queue_mul = manager.dict() # tasks which have not yet been processed
     size_mul  = manager.dict() # total input size of each incoming task and file
+    task_to_ip = manager.dict()
 
     global home_node_host_port, dag
     home_node_host_port = os.environ['HOME_NODE'] + ":" + str(FLASK_SVC)
@@ -147,14 +149,25 @@ def prepare_global_info():
     dag_info = k8s_read_dag(dag_file)
     dag = dag_info[1]
     
+    global task_module
+    # print('Task modules')
+    # print(dag)
+    # print(dag.keys())
+    task_module = {}
+    for task in dag:
+        print(task)
+        task_module[task] = __import__(task)
+        cmd = "mkdir centralized_scheduler/output/" + task 
+        os.system(cmd)
+    # print(task_module)
 
 
 def update_exec_profile_file():
     """Update the execution profile from the home execution profiler's MongoDB and store it in text file.
     """
-    print('Update execution profile information in execution.txt')
-    print(exec_home_ip)
-    print(MONGO_SVC)
+    # print('Update execution profile information in execution.txt')
+    # print(exec_home_ip)
+    # print(MONGO_SVC)
 
     execution_info = []
     num_profilers = 0
@@ -192,28 +205,32 @@ def update_exec_profile_file():
 def get_updated_execution_profile():
     """Get updated execution information from text file
     """
-    print('----- Get updated execution information')
+    #print('----- Get updated execution information')
     with open('execution_log.txt','r') as f:
         reader = csv.reader(f)
         execution = list(reader)
     # fix non-DAG tasks (temporary approach)
-    execution_info = []
+    # execution_info = []
+    # for row in execution:
+    #     if row[0]!='home':
+    #         execution_info.append(row)
+    #     else:
+    #         print(row)
+    #         if row[1] in super_tasks:
+    #             for node in node_list:
+    #                 execution_info.append([node,row[1],row[2],row[3]]) # to copy the home profiler data for the non dag task for each processor.
+    # print(execution_info)
+    execution_info = {}
     for row in execution:
-        if row[0]!='home':
-            execution_info.append(row)
-        else:
-            print(row)
-            if row[1] in super_tasks:
-                for node in node_list:
-                    execution_info.append([node,row[1],row[2],row[3]]) # to copy the home profiler data for the non dag task for each processor.
-    print(execution_info)
+        execution_info[row[0]] = [float(row[1]),float(row[2])]
+    #print(execution_info)
     return execution_info
 
 def get_updated_network_from_source(node_ip):
-    print("--- Get updated network profile information from "+node_ip)   
+    #print("--- Get updated network profile information from "+node_ip)   
     network_info = {}
     try:
-        print('mongodb://'+node_ip+':'+str(MONGO_SVC)+'/')
+        #print('mongodb://'+node_ip+':'+str(MONGO_SVC)+'/')
         client_mongo = MongoClient('mongodb://'+node_ip+':'+str(MONGO_SVC)+'/')
         db = client_mongo.droplet_network_profiler
         collection = db.collection_names(include_system_collections=False)
@@ -230,7 +247,7 @@ def get_updated_network_from_source(node_ip):
             # Source ID, Source IP, Destination ID, Destination IP, Parameters
             # info_to_csv=[ip_node_map[record['Source[IP]']],record['Source[IP]'],ip_node_map[record['Destination[IP]']], record['Destination[IP]'],str(record['Parameters'])]
             network_info[ip_node_map[record['Destination[IP]']]] = str(record['Parameters'])
-        print("Network information from the source node: ", network_info)
+        #print("Network information from the source node: ", network_info)
         return network_info
     except Exception as e:
         print("Network request failed. Will try again, details: " + str(e))
@@ -245,24 +262,24 @@ def get_updated_network_profile(node_name):
     Returns:
         list: network information
     """
-    print('----- Get updated network information:')
+    #print('----- Get updated network information:')
     computing_net_info = get_updated_network_from_source(self_profiler_ip)
-    print(node_ip_map)
-    print(node_name)
+    # print(node_ip_map)
+    # print(node_name)
     task_profiler_ip = node_ip_map[node_name]
-    print(task_profiler_ip)
+    # print(task_profiler_ip)
     controller_net_info = get_updated_network_from_source(task_profiler_ip)
     return computing_net_info,controller_net_info
 
 def get_updated_resource_profile():
     """Requesting resource profiler data using flask for its corresponding profiler node
     """
-    print("----- Get updated resource profile information")  
+    #print("----- Get updated resource profile information")  
     resource_info = [] 
     try:
         for c in range(0,num_retries):
 
-            print("http://" + self_profiler_ip + ":" + str(FLASK_SVC) + "/all")
+            #print("http://" + self_profiler_ip + ":" + str(FLASK_SVC) + "/all")
             r = requests.get("http://" + self_profiler_ip + ":" + str(FLASK_SVC) + "/all")
             result = r.json()
             if len(result) != 0:
@@ -273,7 +290,7 @@ def get_updated_resource_profile():
         if c == num_retries:
             print("Exceeded maximum try times.")
 
-        print("Resource profiles: ", resource_info)
+        # print("Resource profiles: ", resource_info)
         return resource_info
 
     except Exception as e:
@@ -293,7 +310,7 @@ def pricing_calculate(file_name, task_name, task_ip,node_name,file_size):
     """
 
     # Default values
-    price = -1 
+    price = 100000
     w_net = 1 # Network
     w_cpu = 1 # Resource
     w_mem = 1 # Resource
@@ -312,49 +329,83 @@ def pricing_calculate(file_name, task_name, task_ip,node_name,file_size):
         execution_info = get_updated_execution_profile()
         resource_info = get_updated_resource_profile()
         computing_net_info,controller_net_info = get_updated_network_profile(node_name)
-        print('--- Resource: ')
-        print(resource_info)
-        print('--- Network: ')
-        print(computing_net_info)
-        print(controller_net_info)
-        print('--- Execution: ')
-        print(execution_info)
-        print('----Task queue: ')
-        print(queue_mul)
-
-        print('----- Calculating price:')
-        print('--- Resource cost: ')
-        resource_cost = float(resource_info[self_name]["memory"]) * w_mem +  float(resource_info[self_name]["cpu"]) * w_cpu
-        print(resource_cost)
-        print('--- Network cost: ')
-        print(self_name)
-        computing_net_params = computing_net_info[node_name].split()
-        controller_net_params = controller_net_info[self_name].split()
-        computing_net_params = [float(x) for x in computing_net_params]
-        controller_net_params = [float(x) for x in controller_net_params]
-        
-        print('--- Queuing cost: ')
+        # print('--- Resource: ')
+        # print(resource_info)
+        # print('--- Network: ')
+        # print(computing_net_info)
+        # print(controller_net_info)
+        # print('--- Execution: ')
+        # print(execution_info)
+        test_execution_size = cal_file_size('/centralized_scheduler/1botnet.ipsum')
+        # print('----Task queue: ')
+        # print(queue_mul)
+        # print('----- Calculating price:')
+        # print('--- Resource cost: ')
+        mem_cost = float(resource_info[self_name]["memory"])
+        cpu_cost = float(resource_info[self_name]["cpu"])
+        # print(mem_cost)
+        # print(cpu_cost)
+        # print('--- Network cost: ')
+        # print(node_name)
+        if node_name in computing_net_info.keys():
+            computing_params = computing_net_info[node_name].split()
+            controller_params = controller_net_info[self_name].split()
+            computing_params = [float(x) for x in computing_params]
+            controller_params = [float(x) for x in controller_params]
+            # print(computing_params)
+            # print(controller_params)
+            estimated_output = execution_info[task_name][1]* test_execution_size / file_size
+            # print(estimated_output)
+            network_cost = (controller_params[0] * file_size * file_size) + \
+                           (controller_params[1] * file_size) + \
+                           controller_params[2] + \
+                           (computing_params[0] * estimated_output * estimated_output) + \
+                           (computing_params[1] * estimated_output) + \
+                           computing_params[2]
+        else:
+            network_cost = 0 
+        # print(network_cost)
+        #Temporary: linear
+        # print('--- Queuing cost: ')
+        estimated_time = execution_info[task_name][0]* file_size / test_execution_size 
+        # print(estimated_time)
         if len(queue_mul)==0:
             queue_cost = 0
+            print('empty queue, no tasks are waiting')
         else:
             queue_dict = dict(queue_mul)
             queue_task = [k for k,v in queue_dict.items() if v == False]
             size_dict = dict(size_mul)
             queue_size =  [size_dict[k] for k in queue_dict.keys()]
-            print(queue_task)
-            print(queue_size)
-        return queue_price
+            queue_cost = 0 
+            # print(queue_task)
+            # print(queue_size)
+            for idx,task_info in enumerate(queue_task):
+                queue_cost = queue_cost + execution_info[task_info[0]][0]* queue_size[idx] / test_execution_size 
+                print(queue_cost)
+        total_queue_cost = estimated_time + queue_cost
+        #print(total_queue_cost)
+
+        price = w_net * network_cost + w_cpu * cpu_cost + w_mem * mem_cost + \
+                w_exe * total_queue_cost
+
+        # print('--- Final price: ')
+        # print(price)
+        return price
+             
     except:
         print('Error reading input information to calculate the price')
         
-    return -1
+    return price
 
 def announce_price(task_controller_ip, file_name, price):
     try:
 
         print("Announce my price")
         url = "http://" + task_controller_ip + ":" + str(FLASK_SVC) + "/receive_price_info"
-        params = {'file_name':file_name , "node_name": self_name, "node_ip":self_ip, "price": price}
+        pricing_info = file_name+"#"+self_name+"#"+self_ip+"#"+str(price)
+        params = {'pricing_info':pricing_info}
+        #params = {'file_name':file_name , "node_name": self_name, "node_ip":self_ip, "price": price}
         params = parse.urlencode(params)
         req = urllib.request.Request(url='%s%s%s' % (url, '?', params))
         res = urllib.request.urlopen(req)
@@ -371,16 +422,16 @@ def receive_price_request():
     price = 0
     try:
         file_name = request.args.get('file_name')
-        file_size = request.args.get('file_size')
+        file_size = float(request.args.get('file_size'))
         task_name = request.args.get('task_name')
         task_ip   = request.args.get('task_ip')
         node_name = request.args.get('node_name')
         print('---------------------------------')
         print("Received pricing request message:", task_name, file_size,file_name,node_name)
         price = pricing_calculate(file_name, task_name, task_ip,node_name,file_size)
-        print('Estimated price for the current request')
-        print(price)
-        print(task_ip)
+        # print('Estimated price for the current request')
+        # print(price)
+        # print(task_ip)
         announce_price(task_ip, file_name, price)
 
     except Exception as e:
@@ -389,14 +440,46 @@ def receive_price_request():
     return "ok"
 app.add_url_rule('/receive_price_request', 'receive_price_request', receive_price_request)
 
-def execute_task(file_name, task_name):
-    """Execute the task given the input file
+def execute_task(task_name,filenames, input_path, output_path):
+    """Execute the task given the input information
     
     Args:
-        file_name (str): incoming file name
         task_name (str): incoming task name
+        filenames (str): incoming files
+        input_path (str): input file path
+        output_path (str): output file path
     """
+    #ts = time.time()
+    # runtime_info = 'rt_exec '+ temp_name+ ' '+str(ts)
+    # send_runtime_profile(runtime_info)
+    dag_task = multiprocessing.Process(target=task_module[task_name].task, args=(filenames, input_path, output_path))
+    dag_task.start()
+    dag_task.join()
+    #ts = time.time()
+    # runtime_info = 'rt_finish '+ temp_name+ ' '+str(ts)
+    # send_runtime_profile(runtime_info)
 
+def transfer_data_scp(IP,user,pword,source, destination):
+    """Transfer data using SCP
+    
+    Args:
+        IP (str): destination IP address
+        user (str): username
+        pword (str): password
+        source (str): source file path
+        destination (str): destination file path
+    """
+    retry = 0
+    while retry < num_retries:
+        try:
+            cmd = "sshpass -p %s scp -P %s -o StrictHostKeyChecking=no -r %s %s@%s:%s" % (pword, ssh_port, source, user, IP, destination)
+            os.system(cmd)
+            # print('data transfer complete\n')
+            break
+        except:
+            print('Task controller: SSH Connection refused or File transfer failed, will retry in 2 seconds')
+            time.sleep(2)
+        retry += 1
 
 #for OUTPUT folder 
 class Watcher1():
@@ -431,12 +514,19 @@ class Handler1(FileSystemEventHandler):
         """
             Check for any event in the ``OUTPUT`` folder
         """
+        global task_to_ip
         if event.is_directory:
             return None
 
         elif event.event_type == 'created':
              
             print("Received file as output - %s." % event.src_path)
+            task_name = event.src_path.split('/')[-2]
+            # print(task_name)
+            # print(task_to_ip)
+            task_ip = task_to_ip[task_name]
+            # print(task_ip)
+            transfer_data_scp(task_ip,username,password,event.src_path, "/centralized_scheduler/output/")
 
 #for INPUT folder
 class Watcher(multiprocessing.Process):
@@ -469,6 +559,8 @@ class Handler(FileSystemEventHandler):
 
     @staticmethod
     def on_any_event(event):
+        global task_to_ip
+
         if event.is_directory:
             return None
 
@@ -483,17 +575,26 @@ class Handler(FileSystemEventHandler):
                 file_name = new_file.split('.')[0]
             
             task_name = new_file.split('#')[1]
+            task_ip = new_file.split('#')[2]
+            if task_name not in task_to_ip: 
+                task_to_ip[task_name] = task_ip
+    
             key = (task_name,file_name)
             flag = dag[task_name][0] 
             if key not in task_mul:
                 task_mul[key] = [new_file]
                 count_mul[key]= int(flag)-1
-                size_mul[key] = file_size(event.src_path)
+                size_mul[key] = cal_file_size(event.src_path)
             else:
                 task_mul[key] = task_mul[key] + [new_file]
                 count_mul[key]=count_mul[key]-1
-                size_mul[key] = size_mul[key] + file_size(event.src_path)
+                size_mul[key] = size_mul[key] + cal_file_size(event.src_path)
             
+            # print('Incoming files:')
+            
+            # print(task_mul)
+            # print(count_mul)
+            # print(size_mul)
 
             if count_mul[key] == 0: # enough input files
                 incoming_file = task_mul[key]
@@ -501,14 +602,18 @@ class Handler(FileSystemEventHandler):
                     filenames = incoming_file[0]
                 else:
                     filenames = incoming_file
+                print('Add task to the processing queue')
                 queue_mul[key] = False 
+                # print(queue_mul)
 
-                # dag_task = multiprocessing.Process(target=taskmodule.task, args=(filenames, input_path, output_path))
-                # dag_task.start()
-                # dag_task.join()
-                # ts = time.time()
-                # runtime_info = 'rt_finish '+ temp_name+ ' '+str(ts)
-                # send_runtime_profile(runtime_info)
+                input_path = os.path.split(event.src_path)[0]
+                output_path = os.path.join(os.path.split(input_path)[0],'output')
+                # print(output_path)
+                output_path = os.path.join(output_path,task_name)
+                # print(output_path)
+                execute_task(task_name,filenames, input_path, output_path)
+                queue_mul[key] = True
+                
 
 class MonitorRecv(multiprocessing.Process):
     def __init__(self):

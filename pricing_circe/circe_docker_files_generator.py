@@ -115,10 +115,12 @@ RUN echo "export VISIBLE=now" >> /etc/profile
 
 RUN mkdir -p /centralized_scheduler/input
 RUN mkdir -p /centralized_scheduler/output
+RUN mkdir -p /centralized_scheduler/sample_input
 RUN mkdir -p /home/darpa/apps/data
 
 # IF YOU WANNA DEPLOY A DIFFERENT APPLICATION JUST CHANGE THIS LINE
 ADD {app_file}/scripts/ /centralized_scheduler/
+ADD {app_file}/sample_input/ /centralized_scheduler/sample_input/
 
 ADD jupiter_config.ini /jupiter_config.ini
 ADD jupiter_config.py /jupiter_config.py
@@ -188,6 +190,7 @@ ADD pricing_circe/start_computing_worker.sh /start.sh
 ADD scripts/keep_alive.py /centralized_scheduler/keep_alive.py
 ADD {app_file}/configuration.txt  /centralized_scheduler/dag.txt
 ADD {app_file}/scripts/config.json /centralized_scheduler/config.json
+ADD {app_file}/sample_input/1botnet.ipsum /centralized_scheduler/1botnet.ipsum
 
 ADD pricing_circe/pricing_calculator.py /centralized_scheduler/pricing_calculator.py
 

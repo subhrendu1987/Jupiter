@@ -188,7 +188,7 @@ def main():
 
         output_data = [file_size(fname) for fname in filename]
         sum_output_data = sum(output_data) #current: summation of all output files
-        line=task+','+str(mytime)+ ','+ str(sum_output_data) + '\n'
+        line=task+','+str(mytime)+ ','+ str(sum_output_data)+'\n'
         print(line)
         myfile.write(line)
         myfile.flush()
