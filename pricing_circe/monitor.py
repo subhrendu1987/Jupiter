@@ -182,9 +182,9 @@ def setup_exec_node():
             # destination = source+"#"+taskname+"#"+self_ip
             source_list = [("/centralized_scheduler/input/"+f) for f in task_mul[file]]
             destination_list = [(s+"#"+taskname+"#"+self_ip) for s in source_list]
-            print(source_list)
-            print(destination_list)
-            print(file)
+            # print(source_list)
+            # print(destination_list)
+            # print(file)
             ts = time.time()
             runtime_info = 'rt_exec '+ file+ ' '+str(ts)
             send_runtime_profile(runtime_info)
@@ -313,9 +313,9 @@ class Handler1(FileSystemEventHandler):
                 temp_name = new_file.split('.')[0]
             
 
-            ts = time.time()
-            runtime_info = 'rt_finish '+ temp_name+ ' '+str(ts)
-            send_runtime_profile(runtime_info)
+            
+
+            # send_runtime_profile(runtime_info)
                 
             global files_out
 
@@ -326,6 +326,10 @@ class Handler1(FileSystemEventHandler):
             #if you are sending the final output back to scheduler
             if sys.argv[3] == 'home':
                 
+                ts = time.time()
+                runtime_info = 'rt_finish '+ temp_name+ ' '+str(ts)
+                send_runtime_profile(runtime_info)
+
                 IPaddr = sys.argv[4]
                 user = sys.argv[5]
                 password=sys.argv[6]
@@ -350,6 +354,10 @@ class Handler1(FileSystemEventHandler):
                 ssh.close()
 
             elif flag2 == 'true':
+
+                ts = time.time()
+                runtime_info = 'rt_finish '+ temp_name+ ' '+str(ts)
+                send_runtime_profile(runtime_info)
 
                 for i in range(3, len(sys.argv)-1,4):
                     IPaddr = sys.argv[i+1]
@@ -377,12 +385,16 @@ class Handler1(FileSystemEventHandler):
 
                     ssh.close()
 
+
             else:
                 num_child = (len(sys.argv) - 4) / 4
                 files_out.append(new_file)
 
                 if (len(files_out) == num_child):
 
+                    ts = time.time()
+                    runtime_info = 'rt_finish '+ temp_name+ ' '+str(ts)
+                    send_runtime_profile(runtime_info)
                         
                     for i in range(3, len(sys.argv)-1,4):
                         myfile = files_out.pop(0)

@@ -329,8 +329,18 @@ def k8s_pricing_circe_scheduler(dag_info , temp_info, profiler_ips, execution_ip
             For example if the child nodes are k8node1 and k8node2, we will set CHILD_NODES=k8node1:k8node2
             Note that the k8node1 and k8node2 in the example are the unique node ids of the kubernets cluster nodes.
         """
+
         inputnum = str(value[0])
         flag = str(value[1])
+
+        print('------------')
+        print(key)
+        print(value)
+        print(inputnum)
+        print(flag)
+        print(hosts)
+        print(service_ips)
+
 
         for i in range(2,len(value)):
             if i != 2:

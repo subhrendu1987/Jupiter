@@ -14,7 +14,7 @@ import configparser
 
 HERE       = path.abspath(path.dirname(__file__)) + "/"
 INI_PATH   = HERE + 'jupiter_config.ini'
-DAG = 1 #using DAG application or XDAG application
+DAG = 0 #using DAG application or XDAG application
 
 def get_home_node(file_name):
     with open(file_name) as file:

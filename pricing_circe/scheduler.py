@@ -114,6 +114,8 @@ def recv_runtime_profile():
         worker_node = request.args.get('work_node')
         msg = request.args.get('msg').split()
         
+        print(worker_node)
+        print(msg)
 
         print("Received flask message:", worker_node, msg[0],msg[1], msg[2])
 
@@ -124,40 +126,55 @@ def recv_runtime_profile():
         else: #rt_finish
             rt_finish_time[(worker_node,msg[1])] = float(msg[2])
 
-            print('----------------------------')
-            print("Worker node: "+ worker_node)
-            print("Input file : "+ msg[1])
-            print("Total duration time:" + str(rt_finish_time[(worker_node,msg[1])] - rt_enter_time[(worker_node,msg[1])]))
-            print("Waiting time:" + str(rt_exec_time[(worker_node,msg[1])] - rt_enter_time[(worker_node,msg[1])]))
-            print(worker_node + " execution time:" + str(rt_finish_time[(worker_node,msg[1])] - rt_exec_time[(worker_node,msg[1])]))
+            print('********************************')
+            print(len(rt_finish_time.keys()))
+            #if len(rt_finish_time.keys())==140: # DAG tasks
+            if len(rt_finish_time.keys())==200: # non-DAG tasks
+                for item in rt_enter_time:
+                    print(item)
+                for item in rt_exec_time:
+                    print(item)    
+                for item in rt_finish_time:
+                    print(item) 
+            print('********************************')
+            # print('----------------------------')
+            # print("Worker node: "+ worker_node)
+            # print("Input file : "+ msg[1])
+            # print(rt_finish_time[(worker_node,msg[1])])
+            # print(rt_enter_time[(worker_node,msg[1])])
+            # print(rt_exec_time[(worker_node,msg[1])])
+
+            # print("Total duration time:" + str(rt_finish_time[(worker_node,msg[1])] - rt_enter_time[(worker_node,msg[1])]))
+            # print("Waiting time:" + str(rt_exec_time[(worker_node,msg[1])] - rt_enter_time[(worker_node,msg[1])]))
+            # print(worker_node + " execution time:" + str(rt_finish_time[(worker_node,msg[1])] - rt_exec_time[(worker_node,msg[1])]))
             
-            print('----------------------------')  
-            if worker_node == "globalfusion" and msg[1]=="10fusion":#just for evaluation results
-                # Per task stats:
-                print('********************************************') 
-                print("Runtime profiling info:")
-                """
-                    - Worker node: task name
-                    - Input file: input files
-                    - Enter time: time the input file enter the queue
-                    - Execute time: time the input file is processed
-                    - Finish time: time the output file is generated
-                    - Elapse time: total time since the input file is created till the output file is created
-                    - Duration time: total execution time of the task
-                    - Waiting time: total time since the input file is created till it is processed
-                """
+            # print('----------------------------')  
+            # if worker_node == "globalfusion" and msg[1]=="10fusion":#just for evaluation results
+            #     # Per task stats:
+            #     print('********************************************') 
+            #     print("Runtime profiling info:")
+            #     """
+            #         - Worker node: task name
+            #         - Input file: input files
+            #         - Enter time: time the input file enter the queue
+            #         - Execute time: time the input file is processed
+            #         - Finish time: time the output file is generated
+            #         - Elapse time: total time since the input file is created till the output file is created
+            #         - Duration time: total execution time of the task
+            #         - Waiting time: total time since the input file is created till it is processed
+            #     """
                 
-                s = "{:<10} {:<10} {:<10} {:<10} {:<10} {:<10} {:<10} {:<10} \n".format('Task_name','local_input_file','Enter_time','Execute_time','Finish_time','Elapse_time','Duration_time','Waiting_time')
-                print(s)
-                for k, v in rt_enter_time.items():
-                    worker, file = k
-                    if k in rt_finish_time:
-                        elapse = rt_finish_time[k]-v
-                        duration = rt_finish_time[k]-rt_exec_time[k]
-                        waiting = rt_exec_time[k]-v
-                        s = "{:<10} {:<10} {:<10} {:<10} {:<10} {:<10} {:<10} {:<10}\n".format(worker, file, v, rt_exec_time[k],rt_finish_time[k],str(elapse),str(duration),str(waiting))
-                        print(s)
-                print('********************************************')
+            #     s = "{:<10} {:<10} {:<10} {:<10} {:<10} {:<10} {:<10} {:<10} \n".format('Task_name','local_input_file','Enter_time','Execute_time','Finish_time','Elapse_time','Duration_time','Waiting_time')
+            #     print(s)
+            #     for k, v in rt_enter_time.items():
+            #         worker, file = k
+            #         if k in rt_finish_time:
+            #             elapse = rt_finish_time[k]-v
+            #             duration = rt_finish_time[k]-rt_exec_time[k]
+            #             waiting = rt_exec_time[k]-v
+            #             s = "{:<10} {:<10} {:<10} {:<10} {:<10} {:<10} {:<10} {:<10}\n".format(worker, file, v, rt_exec_time[k],rt_finish_time[k],str(elapse),str(duration),str(waiting))
+            #             print(s)
+            #     print('********************************************')
 
                 
     except Exception as e:

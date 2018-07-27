@@ -123,7 +123,7 @@ def recv_runtime_profile():
             rt_exec_time[(worker_node,msg[1])] = float(msg[2])
         else: #rt_finish
             rt_finish_time[(worker_node,msg[1])] = float(msg[2])
-
+ 
             print('----------------------------')
             print("Worker node: "+ worker_node)
             print("Input file : "+ msg[1])

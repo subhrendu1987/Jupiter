@@ -314,7 +314,7 @@ def pricing_calculate(file_name, task_name, task_ip,node_name,file_size):
     w_net = 1 # Network
     w_cpu = 1 # Resource
     w_mem = 1 # Resource
-    w_exe = 1 # Execution time
+    w_queue = 1 # Execution time
 
     """
     Input information:
@@ -339,13 +339,13 @@ def pricing_calculate(file_name, task_name, task_ip,node_name,file_size):
         test_execution_size = cal_file_size('/centralized_scheduler/1botnet.ipsum')
         # print('----Task queue: ')
         # print(queue_mul)
-        # print('----- Calculating price:')
-        # print('--- Resource cost: ')
+        print('----- Calculating price:')
+        print('--- Resource cost: ')
         mem_cost = float(resource_info[self_name]["memory"])
         cpu_cost = float(resource_info[self_name]["cpu"])
-        # print(mem_cost)
-        # print(cpu_cost)
-        # print('--- Network cost: ')
+        print(mem_cost)
+        print(cpu_cost)
+        print('--- Network cost: ')
         # print(node_name)
         if node_name in computing_net_info.keys():
             computing_params = computing_net_info[node_name].split()
@@ -364,33 +364,35 @@ def pricing_calculate(file_name, task_name, task_ip,node_name,file_size):
                            computing_params[2]
         else:
             network_cost = 0 
-        # print(network_cost)
+        print(network_cost)
         #Temporary: linear
-        # print('--- Queuing cost: ')
-        estimated_time = execution_info[task_name][0]* file_size / test_execution_size 
-        # print(estimated_time)
-        if len(queue_mul)==0:
+        print('--- Queuing cost: ')
+        print(task_queue_size)
+
+        if task_queue_size == -1: #infinite tasks
             queue_cost = 0
-            print('empty queue, no tasks are waiting')
         else:
-            queue_dict = dict(queue_mul)
-            queue_task = [k for k,v in queue_dict.items() if v == False]
-            size_dict = dict(size_mul)
-            queue_size =  [size_dict[k] for k in queue_dict.keys()]
-            queue_cost = 0 
-            # print(queue_task)
-            # print(queue_size)
-            for idx,task_info in enumerate(queue_task):
-                queue_cost = queue_cost + execution_info[task_info[0]][0]* queue_size[idx] / test_execution_size 
-                print(queue_cost)
-        total_queue_cost = estimated_time + queue_cost
-        #print(total_queue_cost)
+            if len(queue_mul)==0:
+                queue_cost = 0
+                print('empty queue, no tasks are waiting')
+            else:
+                queue_dict = dict(queue_mul)
+                queue_task = [k for k,v in queue_dict.items() if v == False]
+                size_dict = dict(size_mul)
+                queue_size =  [size_dict[k] for k in queue_dict.keys()]
+                queue_cost = 0 
+                # print(queue_task)
+                # print(queue_size)
+                for idx,task_info in enumerate(queue_task):
+                    #TO_DO: sum or max
+                    queue_cost = queue_cost + execution_info[task_info[0]][0]* queue_size[idx] / test_execution_size 
+        #print(queue_cost)
 
         price = w_net * network_cost + w_cpu * cpu_cost + w_mem * mem_cost + \
-                w_exe * total_queue_cost
+                w_queue * queue_cost
 
-        # print('--- Final price: ')
-        # print(price)
+        print('--- Final price: ')
+        print(price)
         return price
              
     except:
@@ -440,7 +442,35 @@ def receive_price_request():
     return "ok"
 app.add_url_rule('/receive_price_request', 'receive_price_request', receive_price_request)
 
-def execute_task(task_name,filenames, input_path, output_path):
+# def send_runtime_profile(msg,task_name):
+#     """
+#     Sending runtime profiling information to flask server on home
+
+#     Args:
+#         msg (str): the message to be sent
+
+#     Returns:
+#         str: the message if successful, "not ok" otherwise.
+
+#     Raises:
+#         Exception: if sending message to flask server on home is failed
+#     """
+#     try:
+#         print("Sending message", msg)
+#         url = "http://" + home_node_host_port + "/recv_runtime_profile"
+#         params = {'msg': msg, "work_node": task_name}
+#         params = parse.urlencode(params)
+#         req = urllib.request.Request(url='%s%s%s' % (url, '?', params))
+#         res = urllib.request.urlopen(req)
+#         res = res.read()
+#         res = res.decode('utf-8')
+#     except Exception as e:
+#         print("Sending runtime profiling info to flask server on home FAILED!!!")
+#         print(e)
+#         return "not ok"
+#     return res
+
+def execute_task(task_name,file_name, filenames, input_path, output_path):
     """Execute the task given the input information
     
     Args:
@@ -449,15 +479,11 @@ def execute_task(task_name,filenames, input_path, output_path):
         input_path (str): input file path
         output_path (str): output file path
     """
-    #ts = time.time()
-    # runtime_info = 'rt_exec '+ temp_name+ ' '+str(ts)
-    # send_runtime_profile(runtime_info)
     dag_task = multiprocessing.Process(target=task_module[task_name].task, args=(filenames, input_path, output_path))
     dag_task.start()
     dag_task.join()
-    #ts = time.time()
-    # runtime_info = 'rt_finish '+ temp_name+ ' '+str(ts)
-    # send_runtime_profile(runtime_info)
+    
+    
 
 def transfer_data_scp(IP,user,pword,source, destination):
     """Transfer data using SCP
@@ -611,7 +637,8 @@ class Handler(FileSystemEventHandler):
                 # print(output_path)
                 output_path = os.path.join(output_path,task_name)
                 # print(output_path)
-                execute_task(task_name,filenames, input_path, output_path)
+
+                execute_task(task_name,file_name, filenames, input_path, output_path)
                 queue_mul[key] = True
                 
 
@@ -628,7 +655,7 @@ class MonitorRecv(multiprocessing.Process):
 
 def main():
     ## Load all the configuration
-    global username, password, ssh_port,num_retries, MONGO_DOCKER, MONGO_SVC, FLASK_SVC, FLASK_DOCKER
+    global username, password, ssh_port,num_retries, MONGO_DOCKER, MONGO_SVC, FLASK_SVC, FLASK_DOCKER,task_queue_size
     # Load all the confuguration
     INI_PATH = '/jupiter_config.ini'
     config = configparser.ConfigParser()
@@ -637,7 +664,7 @@ def main():
     password    = config['AUTH']['PASSWORD']
     ssh_port    = int(config['PORT']['SSH_SVC'])
     num_retries = int(config['OTHER']['SSH_RETRY_NUM'])
-    pricing_threshold = int(config['OTHER']['PRICING_THRESHOLD'])
+    task_queue_size = int(config['OTHER']['TASK_QUEUE_SIZE'])
     MONGO_SVC    = int(config['PORT']['MONGO_SVC'])
     MONGO_DOCKER = int(config['PORT']['MONGO_DOCKER'])
     FLASK_SVC    = int(config['PORT']['FLASK_SVC'])
